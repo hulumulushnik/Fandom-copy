@@ -5,7 +5,6 @@
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
 
-        // Зв'язок
         public List<Post> Posts { get; set; } = new();
     }
 }

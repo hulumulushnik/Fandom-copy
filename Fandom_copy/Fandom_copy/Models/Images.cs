@@ -8,7 +8,6 @@
         public int Width { get; set; }
         public int Height { get; set; }
 
-        // Зв'язок
         public Guid PostSectionId { get; set; }
         public PostSection PostSection { get; set; } = null!;
     }
