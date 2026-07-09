@@ -1,23 +1,17 @@
 ﻿namespace Fandom_copy.Models
 {
-    class User
+    public class User
     {
-        Guid Id;
-
-        string Login;
-
-        string Email;
-
-        string PasswordHash;
-
-        GlobalRole GlobalRole;
-
-        DateTime RegistrationDate;
-
-        bool IsBanned;
+        public Guid Id { get; set; }
+        public string Login { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string PasswordHash { get; set; } = string.Empty;
+        public GlobalRole GlobalRole { get; set; } = GlobalRole.User;
+        public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
+        public bool IsBanned { get; set; }
     }
 
-    enum GlobalRole
+    public enum GlobalRole
     {
         User,
         Admin
