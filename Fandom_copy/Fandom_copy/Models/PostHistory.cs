@@ -6,7 +6,6 @@
         public DateTime Date { get; set; } = DateTime.UtcNow;
         public string Action { get; set; } = string.Empty;
 
-        // Зв'язок
         public Guid PostId { get; set; }
         public Post Post { get; set; } = null!;
         

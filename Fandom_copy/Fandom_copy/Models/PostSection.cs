@@ -9,7 +9,6 @@ namespace Fandom_copy.Models
         public string Text { get; set; } = string.Empty;
         public int Order { get; set; }
 
-        // Зв'язки
         public Guid PostId { get; set; }
         public Post Post { get; set; } = null!;
         public Guid? ParentSectionId { get; set; }

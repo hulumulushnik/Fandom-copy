@@ -1,0 +1,27 @@
+using Fandom_copy.Models;
+
+namespace Fandom_copy.DTOs.Profile
+{
+    public class UserProfileDto
+    {
+        public Guid Id { get; set; }
+        public string Login { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string GlobalRole { get; set; } = string.Empty;
+        public DateTime RegistrationDate { get; set; }
+        public bool IsBanned { get; set; }
+
+        public static UserProfileDto FromUser(User user)
+        {
+            return new UserProfileDto
+            {
+                Id = user.Id,
+                Login = user.Login,
+                Email = user.Email,
+                GlobalRole = user.GlobalRole.ToString(),
+                RegistrationDate = user.RegistrationDate,
+                IsBanned = user.IsBanned
+            };
+        }
+    }
+}
