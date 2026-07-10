@@ -10,9 +10,17 @@ namespace Fandom_copy.DTOs.Posts
         public int Order { get; set; }
         public Guid PostId { get; set; }
         public Guid? ParentSectionId { get; set; }
+
+        /// <summary>Direct children of this section (one level deep by default).</summary>
         public List<PostSectionDto> SubSections { get; set; } = new();
 
-        public static PostSectionDto FromEntity(PostSection section)
+        /// <summary>
+        /// Breadcrumb from the root of the post down to (but not including) the current section.
+        /// Populated only when returning a single section for its detail page.
+        /// </summary>
+        public List<PostSectionBreadcrumbDto> Breadcrumbs { get; set; } = new();
+
+        public static PostSectionDto FromEntity(PostSection section, bool includeSubSections = true)
         {
             return new PostSectionDto
             {
@@ -22,11 +30,19 @@ namespace Fandom_copy.DTOs.Posts
                 Order = section.Order,
                 PostId = section.PostId,
                 ParentSectionId = section.ParentSectionId,
-                SubSections = section.SubSections?
-                    .OrderBy(s => s.Order)
-                    .Select(FromEntity)
-                    .ToList() ?? new List<PostSectionDto>()
+                SubSections = includeSubSections && section.SubSections != null
+                    ? section.SubSections
+                        .OrderBy(s => s.Order)
+                        .Select(s => FromEntity(s, includeSubSections: false))
+                        .ToList()
+                    : new List<PostSectionDto>()
             };
         }
+    }
+
+    public class PostSectionBreadcrumbDto
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; } = string.Empty;
     }
 }

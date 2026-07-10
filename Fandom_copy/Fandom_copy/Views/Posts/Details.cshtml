@@ -12,6 +12,10 @@
 {
     <div class="alert alert-danger">@err</div>
 }
+@if (TempData["Message"] is string msg)
+{
+    <div class="alert alert-success">@msg</div>
+}
 
 <div class="d-flex justify-content-between align-items-center">
     <div>
@@ -21,21 +25,30 @@
             · @(Model.IsPublic ? "Публічний" : "Приватний")
             · Створено: @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")
             · Оновлено: @Model.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
+            @if (Model.CurrentUserRole is not null)
+            {
+                <span>· Ваша роль: <strong>@Model.CurrentUserRole</strong></span>
+            }
         </p>
     </div>
-    @if (User?.Identity?.IsAuthenticated == true)
+    @if (User?.Identity?.IsAuthenticated == true && Model.CanEdit)
     {
         <div class="btn-group">
             <a asp-controller="Posts" asp-action="Edit" asp-route-id="@Model.Id"
                class="btn btn-outline-secondary">Редагувати пост</a>
             <a asp-controller="PostSections" asp-action="Create" asp-route-postId="@Model.Id"
                class="btn btn-primary">+ Підпост</a>
-            <form asp-controller="Posts" asp-action="Delete" asp-route-id="@Model.Id"
-                  method="post" class="d-inline"
-                  onsubmit="return confirm('Видалити пост?');">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-outline-danger">Видалити пост</button>
-            </form>
+            @if (Model.CanManageMembers)
+            {
+                <a asp-controller="Posts" asp-action="Members" asp-route-id="@Model.Id"
+                   class="btn btn-outline-info">Учасники</a>
+                <form asp-controller="Posts" asp-action="Delete" asp-route-id="@Model.Id"
+                      method="post" class="d-inline"
+                      onsubmit="return confirm('Видалити пост?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-danger">Видалити пост</button>
+                </form>
+            }
         </div>
     }
 </div>
@@ -50,9 +63,17 @@
 }
 else
 {
-    foreach (var s in Model.Sections)
-    {
-        <partial name="~/Views/PostSections/_SectionNode.cshtml" model="s"
-                 view-data='new ViewDataDictionary(ViewData) { ["PostId"] = Model.Id, ["Depth"] = 0 }' />
-    }
+    <div class="list-group mb-3">
+        @foreach (var s in Model.Sections.OrderBy(x => x.Order))
+        {
+            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+               asp-controller="PostSections" asp-action="Details"
+               asp-route-postId="@Model.Id" asp-route-id="@s.Id">
+                <span>
+                    <strong>@s.Title</strong>
+                </span>
+                <small class="text-muted">#@s.Order</small>
+            </a>
+        }
+    </div>
 }

@@ -1,0 +1,236 @@
+@using Fandom_copy.DTOs.Posts
+@using Fandom_copy.Models
+@model List<PostMemberDto>
+@{
+    var post = (PostDto)ViewBag.Post;
+    ViewData["Title"] = $"Учасники — {post.Title}";
+    var searchUrl = Url.Action("SearchUsers", "Posts", new { id = post.Id });
+    var addUrl = Url.Action("AddMember", "Posts", new { id = post.Id });
+}
+
+<nav class="mb-3">
+    <a asp-controller="Posts" asp-action="Details" asp-route-id="@post.Id">← До поста</a>
+</nav>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (TempData["Message"] is string msg)
+{
+    <div class="alert alert-success">@msg</div>
+}
+
+<h1>Учасники поста «@post.Title»</h1>
+<p class="text-muted">Керуйте ролями співавторів. Тільки Owner (ви) бачить цю сторінку.</p>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Додати учасника</h5>
+        <p class="text-muted mb-2">Почніть друкувати логін або email — користувачі підвантажуються з бази.</p>
+
+        <div class="row g-2 align-items-start">
+            <div class="col-md-6 position-relative">
+                <input id="user-search" type="text" class="form-control"
+                       placeholder="Пошук за логіном або email…"
+                       autocomplete="off" />
+                <ul id="user-search-results"
+                    class="list-group position-absolute w-100 shadow-sm"
+                    style="z-index: 1000; max-height: 260px; overflow-y: auto; display: none;"></ul>
+            </div>
+            <div class="col-md-3">
+                <select id="new-member-role" class="form-select">
+                    <option value="@((int)PostRole.Editor)" selected>Editor</option>
+                    <option value="@((int)PostRole.Reader)">Reader</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <form id="add-member-form" method="post" action="@addUrl" class="d-flex gap-2">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="UserId" id="selected-user-id" />
+                    <input type="hidden" name="Role" id="selected-role" value="@((int)PostRole.Editor)" />
+                    <button type="submit" id="add-member-btn"
+                            class="btn btn-primary" disabled>Додати</button>
+                </form>
+            </div>
+        </div>
+        <div id="selected-user-label" class="form-text mt-2"></div>
+    </div>
+</div>
+
+<h5>Поточні учасники (@Model.Count)</h5>
+@if (!Model.Any())
+{
+    <p class="text-muted">Учасників ще немає.</p>
+}
+else
+{
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Логін</th>
+                <th>Email</th>
+                <th>Роль</th>
+                <th>Додано</th>
+                <th class="text-end">Дії</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var m in Model)
+            {
+                <tr>
+                    <td>@m.Login</td>
+                    <td>@m.Email</td>
+                    <td>
+                        @if (m.Role == PostRole.Owner)
+                        {
+                            <span class="badge bg-warning text-dark">Owner</span>
+                        }
+                        else
+                        {
+                            <form asp-controller="Posts" asp-action="UpdateMemberRole"
+                                  asp-route-id="@post.Id" asp-route-memberId="@m.Id"
+                                  method="post" class="d-flex gap-2 align-items-center">
+                                @Html.AntiForgeryToken()
+                                <select name="Role" class="form-select form-select-sm" style="width:auto;">
+                                    <option value="@((int)PostRole.Editor)"
+                                            selected="@(m.Role == PostRole.Editor)">Editor</option>
+                                    <option value="@((int)PostRole.Reader)"
+                                            selected="@(m.Role == PostRole.Reader)">Reader</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Змінити</button>
+                            </form>
+                        }
+                    </td>
+                    <td>@m.AddedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td class="text-end">
+                        @if (m.Role != PostRole.Owner)
+                        {
+                            <form asp-controller="Posts" asp-action="RemoveMember"
+                                  asp-route-id="@post.Id" asp-route-memberId="@m.Id"
+                                  method="post" class="d-inline"
+                                  onsubmit="return confirm('Видалити учасника?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Видалити</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@section Scripts {
+<script>
+(function () {
+    const searchInput = document.getElementById('user-search');
+    const resultsList = document.getElementById('user-search-results');
+    const selectedIdInput = document.getElementById('selected-user-id');
+    const selectedRoleInput = document.getElementById('selected-role');
+    const roleSelect = document.getElementById('new-member-role');
+    const addBtn = document.getElementById('add-member-btn');
+    const label = document.getElementById('selected-user-label');
+    const searchUrl = @Html.Raw(Json.Serialize(searchUrl));
+
+    let debounceHandle = null;
+    let currentRequestId = 0;
+
+    function clearResults() {
+        resultsList.innerHTML = '';
+        resultsList.style.display = 'none';
+    }
+
+    function setSelectedUser(user) {
+        selectedIdInput.value = user.id;
+        addBtn.disabled = false;
+        label.textContent = 'Обрано: ' + user.login + ' <' + user.email + '>';
+        searchInput.value = user.login;
+        clearResults();
+    }
+
+    function clearSelectedUser() {
+        selectedIdInput.value = '';
+        addBtn.disabled = true;
+        label.textContent = '';
+    }
+
+    async function performSearch(query) {
+        const reqId = ++currentRequestId;
+        try {
+            const response = await fetch(searchUrl + '?q=' + encodeURIComponent(query), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (reqId !== currentRequestId) return;
+
+            if (!response.ok) {
+                clearResults();
+                return;
+            }
+            const users = await response.json();
+            renderResults(users);
+        } catch (e) {
+            clearResults();
+        }
+    }
+
+    function renderResults(users) {
+        if (!Array.isArray(users) || users.length === 0) {
+            resultsList.innerHTML =
+                '<li class="list-group-item text-muted">Нічого не знайдено</li>';
+            resultsList.style.display = 'block';
+            return;
+        }
+        resultsList.innerHTML = users.map(u => {
+            const login = escapeHtml(u.login);
+            const email = escapeHtml(u.email);
+            return '<li class="list-group-item list-group-item-action" '
+                 + 'data-id="' + escapeHtml(u.id) + '" '
+                 + 'data-login="' + login + '" '
+                 + 'data-email="' + email + '" '
+                 + 'style="cursor:pointer;">'
+                 + '<strong>' + login + '</strong> '
+                 + '<span class="text-muted">' + email + '</span>'
+                 + '</li>';
+        }).join('');
+        resultsList.style.display = 'block';
+
+        Array.from(resultsList.querySelectorAll('li[data-id]')).forEach(li => {
+            li.addEventListener('mousedown', function (ev) {
+                ev.preventDefault(); // не дати blur на inputі
+                setSelectedUser({
+                    id: li.getAttribute('data-id'),
+                    login: li.getAttribute('data-login'),
+                    email: li.getAttribute('data-email')
+                });
+            });
+        });
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+        }[c]));
+    }
+
+    searchInput.addEventListener('input', function () {
+        clearSelectedUser();
+        const q = searchInput.value.trim();
+        if (debounceHandle) clearTimeout(debounceHandle);
+        if (q.length === 0) { clearResults(); return; }
+        debounceHandle = setTimeout(() => performSearch(q), 200);
+    });
+
+    searchInput.addEventListener('blur', function () {
+        // Даємо кліку на елемент списку відпрацювати
+        setTimeout(clearResults, 150);
+    });
+
+    roleSelect.addEventListener('change', function () {
+        selectedRoleInput.value = roleSelect.value;
+    });
+})();
+</script>
+}

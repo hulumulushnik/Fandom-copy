@@ -91,6 +91,12 @@ namespace Fandom_copy.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            if (!result.Data!.CanEdit)
+            {
+                TempData["Error"] = "Немає прав на редагування цього поста";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
             await LoadCategoriesAsync(result.Data!.CategoryId);
 
             var dto = new UpdatePostDto
@@ -148,6 +154,111 @@ namespace Fandom_copy.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        // -----------------------------------------------------------------
+        //  Members
+        // -----------------------------------------------------------------
+
+        // GET /posts/{id}/members
+        [HttpGet("{id:guid}/members")]
+        [Authorize]
+        public async Task<IActionResult> Members(Guid id)
+        {
+            var userId = GetCurrentUserId();
+
+            var postResult = await _postService.GetByIdAsync(id, userId);
+            if (!postResult.Success)
+            {
+                TempData["Error"] = postResult.Error;
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!postResult.Data!.CanManageMembers)
+            {
+                TempData["Error"] = "Лише власник може керувати учасниками";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var membersResult = await _postService.GetMembersAsync(id, userId);
+            if (!membersResult.Success)
+            {
+                TempData["Error"] = membersResult.Error;
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            ViewBag.Post = postResult.Data;
+            return View(membersResult.Data);
+        }
+
+        // POST /posts/{id}/members/add
+        [HttpPost("{id:guid}/members/add")]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddMember(Guid id, AddPostMemberDto dto)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _postService.AddMemberAsync(id, dto, userId);
+
+            if (!result.Success)
+                TempData["Error"] = result.Error;
+            else
+                TempData["Message"] = $"Додано: {result.Data!.Login} ({result.Data.Role})";
+
+            return RedirectToAction(nameof(Members), new { id });
+        }
+
+        // POST /posts/{id}/members/{memberId}/role
+        [HttpPost("{id:guid}/members/{memberId:guid}/role")]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateMemberRole(Guid id, Guid memberId, UpdatePostMemberRoleDto dto)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _postService.UpdateMemberRoleAsync(id, memberId, dto, userId);
+
+            if (!result.Success)
+                TempData["Error"] = result.Error;
+            else
+                TempData["Message"] = $"Роль оновлено: {result.Data!.Role}";
+
+            return RedirectToAction(nameof(Members), new { id });
+        }
+
+        // POST /posts/{id}/members/{memberId}/delete
+        [HttpPost("{id:guid}/members/{memberId:guid}/delete")]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveMember(Guid id, Guid memberId)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _postService.RemoveMemberAsync(id, memberId, userId);
+
+            if (!result.Success)
+                TempData["Error"] = result.Error;
+            else
+                TempData["Message"] = "Учасника видалено";
+
+            return RedirectToAction(nameof(Members), new { id });
+        }
+
+        // GET /posts/{id}/users/search?q=...
+        // Використовується JS-контролом на сторінці Members для живого пошуку користувачів у БД.
+        [HttpGet("{id:guid}/users/search")]
+        [Authorize]
+        public async Task<IActionResult> SearchUsers(Guid id, string q)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _postService.SearchUsersAsync(id, q ?? string.Empty, userId);
+
+            if (!result.Success)
+                return Forbid();
+
+            return Json(result.Data);
+        }
+
+        // -----------------------------------------------------------------
+        //  Helpers
+        // -----------------------------------------------------------------
 
         private async Task LoadCategoriesAsync(Guid? selectedId = null)
         {

@@ -14,7 +14,18 @@ namespace Fandom_copy.DTOs.Posts
         public DateTime UpdatedAt { get; set; }
         public List<PostSectionDto> Sections { get; set; } = new();
 
-        public static PostDto FromEntity(Post post)
+        /// <summary>
+        /// Role of the current viewer for this post, or <c>null</c> if the viewer is
+        /// anonymous or not a member of the post.
+        /// </summary>
+        public PostRole? CurrentUserRole { get; set; }
+
+        public bool CanEdit =>
+            CurrentUserRole == PostRole.Owner || CurrentUserRole == PostRole.Editor;
+
+        public bool CanManageMembers => CurrentUserRole == PostRole.Owner;
+
+        public static PostDto FromEntity(Post post, PostRole? currentUserRole = null)
         {
             return new PostDto
             {
@@ -26,10 +37,11 @@ namespace Fandom_copy.DTOs.Posts
                 IsPublic = post.IsPublic,
                 CreatedAt = post.CreatedAt,
                 UpdatedAt = post.UpdatedAt,
+                CurrentUserRole = currentUserRole,
                 Sections = post.Sections
                     .Where(s => s.ParentSectionId == null)
                     .OrderBy(s => s.Order)
-                    .Select(PostSectionDto.FromEntity)
+                    .Select(s => PostSectionDto.FromEntity(s, includeSubSections: false))
                     .ToList()
             };
         }
