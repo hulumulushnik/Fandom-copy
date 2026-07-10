@@ -1,0 +1,2 @@
+@{ ViewData["Title"] = "Email confirmation"; var confirmed = (bool)(ViewData["Confirmed"] ?? false); }
+<section class="account-shell"><div class="account-card status-card"><div class="status-icon @(confirmed ? "ok" : "bad")">@(confirmed ? "✓" : "!")</div><h1>@(confirmed ? "Email confirmed" : "Confirmation failed")</h1><p class="muted">@ViewData["Message"]</p><a class="primary-btn link-button" asp-action="Login">Go to sign in</a></div></section>

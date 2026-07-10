@@ -9,6 +9,15 @@
         public GlobalRole GlobalRole { get; set; } = GlobalRole.User;
         public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
         public bool IsBanned { get; set; }
+
+        // Підтвердження email
+        public bool EmailConfirmed { get; set; } = false;
+        public string? EmailConfirmationToken { get; set; }
+        public DateTime? EmailConfirmationTokenExpiresAt { get; set; }
+
+        // Відновлення паролю
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpiresAt { get; set; }
     }
 
     public enum GlobalRole

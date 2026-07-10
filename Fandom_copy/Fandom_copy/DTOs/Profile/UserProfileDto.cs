@@ -10,6 +10,7 @@ namespace Fandom_copy.DTOs.Profile
         public string GlobalRole { get; set; } = string.Empty;
         public DateTime RegistrationDate { get; set; }
         public bool IsBanned { get; set; }
+        public bool EmailConfirmed { get; set; }
 
         public static UserProfileDto FromUser(User user)
         {
@@ -20,7 +21,8 @@ namespace Fandom_copy.DTOs.Profile
                 Email = user.Email,
                 GlobalRole = user.GlobalRole.ToString(),
                 RegistrationDate = user.RegistrationDate,
-                IsBanned = user.IsBanned
+                IsBanned = user.IsBanned,
+                EmailConfirmed = user.EmailConfirmed
             };
         }
     }
