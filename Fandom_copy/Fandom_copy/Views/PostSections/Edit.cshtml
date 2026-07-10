@@ -10,7 +10,7 @@
 
 <form asp-action="Edit" asp-route-postId="@postId" asp-route-id="@sectionId" method="post">
     @Html.AntiForgeryToken()
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div asp-validation-summary="All" class="text-danger"></div>
 
     <div class="mb-3">
         <label asp-for="Title" class="form-label">Заголовок</label>
@@ -20,7 +20,7 @@
 
     <div class="mb-3">
         <label asp-for="Text" class="form-label">Текст</label>
-        <textarea asp-for="Text" class="form-control" rows="8"></textarea>
+        <textarea asp-for="Text" class="form-control" rows="12"></textarea>
         <span asp-validation-for="Text" class="text-danger"></span>
     </div>
 
@@ -31,7 +31,8 @@
     </div>
 
     <button type="submit" class="btn btn-primary">Зберегти</button>
-    <a asp-controller="Posts" asp-action="Details" asp-route-id="@postId"
+    <a asp-controller="PostSections" asp-action="Details"
+       asp-route-postId="@postId" asp-route-id="@sectionId"
        class="btn btn-outline-secondary">Скасувати</a>
 </form>
 
