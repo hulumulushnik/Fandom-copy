@@ -29,13 +29,27 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<IPostSectionService, PostSectionService>();
 
 var app = builder.Build();
 
+// The module is immediately usable on a fresh local database. Replace this with
+// migrations before deploying to a production environment.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.EnsureCreated();
+    if (!db.Categories.Any())
+    {
+        db.Categories.Add(new Fandom_copy.Models.Category
+        {
+            Id = Guid.NewGuid(),
+            Name = "General",
+            Description = "Default category for community posts."
+        });
+        db.SaveChanges();
+    }
 }
 
 if (!app.Environment.IsDevelopment())

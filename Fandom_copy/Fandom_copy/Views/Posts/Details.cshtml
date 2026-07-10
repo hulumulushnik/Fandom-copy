@@ -1,0 +1,58 @@
+@using Fandom_copy.DTOs.Posts
+@model PostDto
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<nav class="mb-3">
+    <a asp-controller="Posts" asp-action="Index">← До списку</a>
+</nav>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <h1>@Model.Title</h1>
+        <p class="text-muted">
+            Категорія: @(Model.CategoryName ?? "—")
+            · @(Model.IsPublic ? "Публічний" : "Приватний")
+            · Створено: @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+            · Оновлено: @Model.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
+        </p>
+    </div>
+    @if (User?.Identity?.IsAuthenticated == true)
+    {
+        <div class="btn-group">
+            <a asp-controller="Posts" asp-action="Edit" asp-route-id="@Model.Id"
+               class="btn btn-outline-secondary">Редагувати пост</a>
+            <a asp-controller="PostSections" asp-action="Create" asp-route-postId="@Model.Id"
+               class="btn btn-primary">+ Підпост</a>
+            <form asp-controller="Posts" asp-action="Delete" asp-route-id="@Model.Id"
+                  method="post" class="d-inline"
+                  onsubmit="return confirm('Видалити пост?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-danger">Видалити пост</button>
+            </form>
+        </div>
+    }
+</div>
+
+<hr />
+<div class="mb-4" style="white-space:pre-wrap;">@Model.Description</div>
+
+<h3>Підпости</h3>
+@if (!Model.Sections.Any())
+{
+    <p class="text-muted">Підпостів ще немає.</p>
+}
+else
+{
+    foreach (var s in Model.Sections)
+    {
+        <partial name="~/Views/PostSections/_SectionNode.cshtml" model="s"
+                 view-data='new ViewDataDictionary(ViewData) { ["PostId"] = Model.Id, ["Depth"] = 0 }' />
+    }
+}

@@ -25,6 +25,9 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">Правила</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Posts" asp-action="Index">Пости</a>
+                        </li>
                     </ul>
                     <div class="nav-account">
                     @if (User.Identity?.IsAuthenticated == true) { <a asp-controller="Account" asp-action="Profile">@User.Identity.Name</a><form asp-controller="Account" asp-action="Logout" method="post"><button type="submit">Вийти</button></form> }
