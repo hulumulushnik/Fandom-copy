@@ -1,18 +1,28 @@
-﻿using Fandom_copy.Data;
+using Fandom_copy.Data;
 using Fandom_copy.DTOs.Auth;
 using Fandom_copy.DTOs.Profile;
 using Fandom_copy.Models;
+using Fandom_copy.Services.Email;
+using Fandom_copy.Services.Security;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Fandom_copy.Services
 {
     public class UserService : IUserService
     {
-        private readonly ApplicationDbContext _db;
+        private static readonly TimeSpan EmailConfirmationTokenLifetime = TimeSpan.FromHours(24);
+        private static readonly TimeSpan PasswordResetTokenLifetime = TimeSpan.FromHours(1);
 
-        public UserService(ApplicationDbContext db)
+        private readonly ApplicationDbContext _db;
+        private readonly IEmailService _emailService;
+        private readonly AppSettings _appSettings;
+
+        public UserService(ApplicationDbContext db, IEmailService emailService, IOptions<AppSettings> appSettings)
         {
             _db = db;
+            _emailService = emailService;
+            _appSettings = appSettings.Value;
         }
 
         public async Task<ServiceResult<User>> RegisterAsync(RegisterRequestDto dto)
@@ -36,11 +46,16 @@ namespace Fandom_copy.Services
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 GlobalRole = GlobalRole.User,
                 RegistrationDate = DateTime.UtcNow,
-                IsBanned = false
+                IsBanned = false,
+                EmailConfirmed = false
             };
+
+            SetEmailConfirmationToken(user);
 
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
+
+            await SendEmailConfirmationLinkAsync(user);
 
             return ServiceResult<User>.Ok(user);
         }
@@ -62,7 +77,51 @@ namespace Fandom_copy.Services
             if (!passwordOk)
                 return ServiceResult<User>.Fail("Невірний логін/email або пароль");
 
+            // Пошту можна не підтверджувати, щоб не блокувати вхід новим користувачам,
+            // фронтенд може показати банер "підтвердіть email" за user.EmailConfirmed.
             return ServiceResult<User>.Ok(user);
+        }
+
+        public async Task<ServiceResult> ConfirmEmailAsync(Guid userId, string token)
+        {
+            var user = await _db.Users.FindAsync(userId);
+            if (user is null)
+                return ServiceResult.Fail("Користувача не знайдено");
+
+            if (user.EmailConfirmed)
+                return ServiceResult.Ok();
+
+            if (string.IsNullOrEmpty(user.EmailConfirmationToken) ||
+                user.EmailConfirmationTokenExpiresAt is null ||
+                user.EmailConfirmationTokenExpiresAt < DateTime.UtcNow ||
+                !string.Equals(user.EmailConfirmationToken, token, StringComparison.Ordinal))
+            {
+                return ServiceResult.Fail("Посилання для підтвердження недійсне або застаріле");
+            }
+
+            user.EmailConfirmed = true;
+            user.EmailConfirmationToken = null;
+            user.EmailConfirmationTokenExpiresAt = null;
+            await _db.SaveChangesAsync();
+
+            return ServiceResult.Ok();
+        }
+
+        public async Task<ServiceResult> ResendEmailConfirmationAsync(ResendConfirmationRequestDto dto)
+        {
+            var email = dto.Email.Trim().ToLowerInvariant();
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            // Не розкриваємо, чи існує такий email - завжди повертаємо Ok
+            if (user is null || user.EmailConfirmed)
+                return ServiceResult.Ok();
+
+            SetEmailConfirmationToken(user);
+            await _db.SaveChangesAsync();
+
+            await SendEmailConfirmationLinkAsync(user);
+
+            return ServiceResult.Ok();
         }
 
         public async Task<ServiceResult> RequestPasswordResetAsync(ForgotPasswordRequestDto dto)
@@ -70,8 +129,43 @@ namespace Fandom_copy.Services
             var email = dto.Email.Trim().ToLowerInvariant();
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-            if (user is null)
+            // Навмисно не повідомляємо, чи існує акаунт з таким email (захист від enumeration)
+            if (user is null || user.IsBanned)
                 return ServiceResult.Ok();
+
+            user.PasswordResetToken = TokenGenerator.Generate();
+            user.PasswordResetTokenExpiresAt = DateTime.UtcNow.Add(PasswordResetTokenLifetime);
+            await _db.SaveChangesAsync();
+
+            var resetLink = BuildClientLink("Account/ResetPassword", new Dictionary<string, string>
+            {
+                ["email"] = user.Email,
+                ["token"] = user.PasswordResetToken
+            });
+
+            await _emailService.SendPasswordResetAsync(user.Email, user.Login, resetLink);
+
+            return ServiceResult.Ok();
+        }
+
+        public async Task<ServiceResult> ResetPasswordAsync(ResetPasswordRequestDto dto)
+        {
+            var email = dto.Email.Trim().ToLowerInvariant();
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user is null ||
+                string.IsNullOrEmpty(user.PasswordResetToken) ||
+                user.PasswordResetTokenExpiresAt is null ||
+                user.PasswordResetTokenExpiresAt < DateTime.UtcNow ||
+                !string.Equals(user.PasswordResetToken, dto.Token, StringComparison.Ordinal))
+            {
+                return ServiceResult.Fail("Посилання для відновлення паролю недійсне або застаріле");
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiresAt = null;
+            await _db.SaveChangesAsync();
 
             return ServiceResult.Ok();
         }
@@ -102,9 +196,22 @@ namespace Fandom_copy.Services
             if (emailTaken)
                 return ServiceResult<UserProfileDto>.Fail("Такий email вже зайнятий");
 
+            bool emailChanged = user.Email != email;
+
             user.Login = login;
             user.Email = email;
+
+            if (emailChanged)
+            {
+                // При зміні email потрібно підтвердити його заново
+                user.EmailConfirmed = false;
+                SetEmailConfirmationToken(user);
+            }
+
             await _db.SaveChangesAsync();
+
+            if (emailChanged)
+                await SendEmailConfirmationLinkAsync(user);
 
             return ServiceResult<UserProfileDto>.Ok(UserProfileDto.FromUser(user));
         }
@@ -135,6 +242,35 @@ namespace Fandom_copy.Services
             await _db.SaveChangesAsync();
 
             return ServiceResult.Ok();
+        }
+
+        private static void SetEmailConfirmationToken(User user)
+        {
+            user.EmailConfirmationToken = TokenGenerator.Generate();
+            user.EmailConfirmationTokenExpiresAt = DateTime.UtcNow.Add(EmailConfirmationTokenLifetime);
+        }
+
+        private async Task SendEmailConfirmationLinkAsync(User user)
+        {
+            var confirmationLink = BuildClientLink("Account/ConfirmEmail", new Dictionary<string, string>
+            {
+                ["userId"] = user.Id.ToString(),
+                ["token"] = user.EmailConfirmationToken!
+            });
+
+            await _emailService.SendEmailConfirmationAsync(user.Email, user.Login, confirmationLink);
+        }
+
+        private string BuildClientLink(string path, Dictionary<string, string> queryParams)
+        {
+            var baseUrl = string.IsNullOrWhiteSpace(_appSettings.ClientBaseUrl)
+                ? "http://localhost:5000"
+                : _appSettings.ClientBaseUrl.TrimEnd('/');
+
+            var query = string.Join("&", queryParams.Select(kv =>
+                $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+
+            return $"{baseUrl}/{path}?{query}";
         }
     }
 }

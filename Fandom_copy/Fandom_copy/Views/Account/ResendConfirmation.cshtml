@@ -1,0 +1,4 @@
+@model Fandom_copy.DTOs.Auth.ResendConfirmationRequestDto
+@{ ViewData["Title"] = "Resend confirmation"; }
+<section class="account-shell"><div class="account-card"><p class="eyebrow">EMAIL CONFIRMATION</p><h1>Send a new link</h1><p class="muted">Enter the email used when you registered.</p><form method="post"><div asp-validation-summary="ModelOnly" class="form-error"></div><label asp-for="Email">Email</label><input asp-for="Email" autocomplete="email"/><span asp-validation-for="Email"></span><button class="primary-btn">Resend email</button></form><p class="account-footer"><a asp-action="Login">Back to sign in</a></p></div></section>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

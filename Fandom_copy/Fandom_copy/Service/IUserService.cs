@@ -9,7 +9,11 @@ namespace Fandom_copy.Services
         Task<ServiceResult<User>> RegisterAsync(RegisterRequestDto dto);
         Task<ServiceResult<User>> LoginAsync(LoginRequestDto dto);
 
+        Task<ServiceResult> ConfirmEmailAsync(Guid userId, string token);
+        Task<ServiceResult> ResendEmailConfirmationAsync(ResendConfirmationRequestDto dto);
+
         Task<ServiceResult> RequestPasswordResetAsync(ForgotPasswordRequestDto dto);
+        Task<ServiceResult> ResetPasswordAsync(ResetPasswordRequestDto dto);
 
         Task<ServiceResult<UserProfileDto>> GetProfileAsync(Guid userId);
         Task<ServiceResult<UserProfileDto>> UpdateProfileAsync(Guid userId, UpdateProfileDto dto);

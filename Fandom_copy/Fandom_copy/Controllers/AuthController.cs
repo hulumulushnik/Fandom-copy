@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Fandom_copy.DTOs.Auth;
 using Fandom_copy.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -28,12 +28,17 @@ namespace Fandom_copy.Controllers
             if (!result.Success)
                 return BadRequest(new { message = result.Error });
 
-            await SignInAsync(result.Data!.Id, result.Data.Login, result.Data.GlobalRole.ToString(), rememberMe: false);
-
             return Ok(new
             {
-                message = "Реєстрація успішна",
-                user = new { result.Data.Id, result.Data.Login, result.Data.Email, result.Data.GlobalRole }
+                message = "Реєстрація успішна. На вашу пошту надіслано лист для підтвердження",
+                user = new
+                {
+                    result.Data.Id,
+                    result.Data.Login,
+                    result.Data.Email,
+                    result.Data.GlobalRole,
+                    result.Data.EmailConfirmed
+                }
             });
         }
 
@@ -52,7 +57,14 @@ namespace Fandom_copy.Controllers
             return Ok(new
             {
                 message = "Вхід виконано",
-                user = new { result.Data.Id, result.Data.Login, result.Data.Email, result.Data.GlobalRole }
+                user = new
+                {
+                    result.Data.Id,
+                    result.Data.Login,
+                    result.Data.Email,
+                    result.Data.GlobalRole,
+                    result.Data.EmailConfirmed
+                }
             });
         }
 
@@ -61,6 +73,30 @@ namespace Fandom_copy.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Ok(new { message = "Вихід виконано" });
+        }
+
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] Guid userId, [FromQuery] string token)
+        {
+            if (userId == Guid.Empty || string.IsNullOrWhiteSpace(token))
+                return BadRequest(new { message = "Некоректне посилання підтвердження" });
+
+            var result = await _userService.ConfirmEmailAsync(userId, token);
+            if (!result.Success)
+                return BadRequest(new { message = result.Error });
+
+            return Ok(new { message = "Email успішно підтверджено" });
+        }
+
+        [HttpPost("resend-confirmation")]
+        public async Task<IActionResult> ResendConfirmation([FromBody] ResendConfirmationRequestDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            await _userService.ResendEmailConfirmationAsync(dto);
+
+            return Ok(new { message = "Якщо такий email зареєстровано і ще не підтверджено, на нього надіслано новий лист" });
         }
 
         [HttpPost("forgot-password")]
@@ -72,6 +108,19 @@ namespace Fandom_copy.Controllers
             await _userService.RequestPasswordResetAsync(dto);
 
             return Ok(new { message = "Якщо такий email зареєстровано, на нього надіслано інструкції з відновлення" });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _userService.ResetPasswordAsync(dto);
+            if (!result.Success)
+                return BadRequest(new { message = result.Error });
+
+            return Ok(new { message = "Пароль успішно змінено" });
         }
 
         private async Task SignInAsync(Guid userId, string login, string role, bool rememberMe)
