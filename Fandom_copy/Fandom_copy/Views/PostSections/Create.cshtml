@@ -1,0 +1,47 @@
+@using Fandom_copy.DTOs.Posts
+@model CreatePostSectionDto
+@{
+    ViewData["Title"] = "Створити підпост";
+    var postId = (Guid)ViewBag.PostId;
+}
+
+<h1>Створити підпост</h1>
+
+<form asp-action="Create" asp-route-postId="@postId" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="ParentSectionId" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    @if (Model.ParentSectionId is not null)
+    {
+        <div class="alert alert-info">
+            Створюється як вкладений підпост (parent: @Model.ParentSectionId)
+        </div>
+    }
+
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label">Заголовок</label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Text" class="form-label">Текст</label>
+        <textarea asp-for="Text" class="form-control" rows="8"></textarea>
+        <span asp-validation-for="Text" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Order" class="form-label">Порядок</label>
+        <input asp-for="Order" type="number" class="form-control" />
+        <span asp-validation-for="Order" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Створити</button>
+    <a asp-controller="Posts" asp-action="Details" asp-route-id="@postId"
+       class="btn btn-outline-secondary">Скасувати</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
