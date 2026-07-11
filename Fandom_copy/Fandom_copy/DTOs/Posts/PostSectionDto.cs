@@ -10,9 +10,12 @@ namespace Fandom_copy.DTOs.Posts
         public int Order { get; set; }
         public Guid PostId { get; set; }
         public Guid? ParentSectionId { get; set; }
+        public string? PrimaryImagePath { get; set; }
+        public string? IconPath { get; set; }
 
         /// <summary>Direct children of this section (one level deep by default).</summary>
         public List<PostSectionDto> SubSections { get; set; } = new();
+        public List<PostContentBlockDto> ContentBlocks { get; set; } = new();
 
         /// <summary>
         /// Breadcrumb from the root of the post down to (but not including) the current section.
@@ -30,6 +33,8 @@ namespace Fandom_copy.DTOs.Posts
                 Order = section.Order,
                 PostId = section.PostId,
                 ParentSectionId = section.ParentSectionId,
+                PrimaryImagePath = null,
+                IconPath = section.IconPath,
                 SubSections = includeSubSections && section.SubSections != null
                     ? section.SubSections
                         .OrderBy(s => s.Order)

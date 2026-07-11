@@ -1,40 +1,112 @@
 @using Fandom_copy.DTOs.Posts
+@using Fandom_copy.Models
 @model UpdatePostSectionDto
 @{
     ViewData["Title"] = "Редагувати підпост";
     var postId = (Guid)ViewBag.PostId;
     var sectionId = (Guid)ViewBag.SectionId;
+    var sectionImages = ViewBag.SectionImages as List<PostContentBlockDto> ?? new List<PostContentBlockDto>();
 }
 
-<h1>Редагувати підпост</h1>
-
-<form asp-action="Edit" asp-route-postId="@postId" asp-route-id="@sectionId" method="post">
-    @Html.AntiForgeryToken()
-    <div asp-validation-summary="All" class="text-danger"></div>
-
-    <div class="mb-3">
-        <label asp-for="Title" class="form-label">Заголовок</label>
-        <input asp-for="Title" class="form-control" />
-        <span asp-validation-for="Title" class="text-danger"></span>
+<section class="editor-page">
+    <div class="editor-heading">
+        <p class="wiki-kicker">Редактор подпоста</p>
+        <h1>Редагувати підпост</h1>
+        <p>Основной текст и новые фото можно менять здесь, а точное расположение блоков — в “Структуре”.</p>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Text" class="form-label">Текст</label>
-        <textarea asp-for="Text" class="form-control" rows="12"></textarea>
-        <span asp-validation-for="Text" class="text-danger"></span>
-    </div>
+    <form asp-action="Edit" asp-route-postId="@postId" asp-route-id="@sectionId" method="post" enctype="multipart/form-data" class="editor-card">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-danger"></div>
 
-    <div class="mb-3">
-        <label asp-for="Order" class="form-label">Порядок</label>
-        <input asp-for="Order" type="number" class="form-control" />
-        <span asp-validation-for="Order" class="text-danger"></span>
-    </div>
+        <div class="editor-two-columns">
+            <div class="editor-main-column">
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label">Заголовок</label>
+                    <input asp-for="Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
 
-    <button type="submit" class="btn btn-primary">Зберегти</button>
-    <a asp-controller="PostSections" asp-action="Details"
-       asp-route-postId="@postId" asp-route-id="@sectionId"
-       class="btn btn-outline-secondary">Скасувати</a>
-</form>
+                <div class="mb-3">
+                    <label asp-for="Text" class="form-label">Базовый текст</label>
+                    <textarea asp-for="Text" class="form-control" rows="12"></textarea>
+                    <span asp-validation-for="Text" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Order" class="form-label">Порядок</label>
+                    <input asp-for="Order" type="number" class="form-control" />
+                    <span asp-validation-for="Order" class="text-danger"></span>
+                </div>
+            </div>
+
+            <aside class="editor-side-column">
+                <div class="media-uploader">
+                    <h2>Іконка підпоста</h2>
+                    <p>Значок картки цього підпоста в структурі — окремо від фото в тексті.</p>
+                    @{
+                        var currentIconPath = ViewBag.CurrentIconPath as string;
+                    }
+                    @if (!string.IsNullOrWhiteSpace(currentIconPath))
+                    {
+                        <div class="existing-media-strip mb-2">
+                            <figure>
+                                <img src="@Url.Content(currentIconPath)" alt="Поточна іконка" />
+                                <figcaption>Поточна іконка</figcaption>
+                            </figure>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input type="checkbox" name="removeIcon" value="true" class="form-check-input" id="removeIconCheck" />
+                            <label class="form-check-label" for="removeIconCheck">Прибрати іконку</label>
+                        </div>
+                    }
+                    <input type="file" name="iconFile" accept="image/png,image/jpeg,image/gif,image/webp" class="form-control js-image-input" data-preview="#sectionEditIconPreview" />
+                    <small class="text-muted">Нове зображення замінить поточну іконку.</small>
+                    <div id="sectionEditIconPreview" class="image-preview-grid"></div>
+                </div>
+
+                <div class="media-uploader mt-3">
+                    <h2>Добавить фото</h2>
+                    <input type="file" name="imageFiles" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="form-control js-image-input" data-preview="#sectionEditImagePreview" />
+                    <input type="text" name="imageCaption" maxlength="240" class="form-control mt-2" placeholder="Общая подпись к новым фото" />
+                    <small class="text-muted">Новые фото добавятся в конец структуры подпоста.</small>
+                    <div id="sectionEditImagePreview" class="image-preview-grid"></div>
+                </div>
+
+                <div class="media-uploader mt-3">
+                    <h2>Фото подпоста</h2>
+                    @if (sectionImages.Any())
+                    {
+                        <div class="existing-media-strip">
+                            @foreach (var img in sectionImages)
+                            {
+                                <figure>
+                                    <img src="@Url.Content(img.ImagePath)" alt="@(string.IsNullOrWhiteSpace(img.ImageCaption) ? "Фото подпоста" : img.ImageCaption)" />
+                                    @if (!string.IsNullOrWhiteSpace(img.ImageCaption))
+                                    {
+                                        <figcaption>@img.ImageCaption</figcaption>
+                                    }
+                                </figure>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">Фото пока нет.</p>
+                    }
+                    <a asp-controller="PostContent" asp-action="Index" asp-route-postId="@postId" asp-route-sectionId="@sectionId" class="btn btn-sm btn-outline-primary mt-3">Открыть структуру</a>
+                </div>
+            </aside>
+        </div>
+
+        <div class="editor-actions">
+            <button type="submit" class="btn btn-primary">Зберегти</button>
+            <a asp-controller="PostSections" asp-action="Details"
+               asp-route-postId="@postId" asp-route-id="@sectionId"
+               class="btn btn-outline-secondary">Скасувати</a>
+        </div>
+    </form>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

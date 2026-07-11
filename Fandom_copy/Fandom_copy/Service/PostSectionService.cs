@@ -40,6 +40,24 @@ namespace Fandom_copy.Services
             }
 
             var dto = PostSectionDto.FromEntity(section, includeSubSections: true);
+            var contentBlocks = await _db.PostContentBlocks
+                .Include(b => b.Section)
+                .Where(b => b.ContainerSectionId == section.Id)
+                .OrderBy(b => b.Order)
+                .ToListAsync();
+            dto.ContentBlocks = contentBlocks.Select(PostContentBlockDto.FromEntity).ToList();
+            var childIds = dto.SubSections.Select(s => s.Id).ToList();
+            if (childIds.Count > 0)
+            {
+                var childImages = await _db.PostContentBlocks
+                    .Where(b => b.Type == PostContentBlockType.Image && b.ContainerSectionId != null && childIds.Contains(b.ContainerSectionId.Value))
+                    .OrderBy(b => b.Order)
+                    .Select(b => new { SectionId = b.ContainerSectionId!.Value, b.ImagePath })
+                    .ToListAsync();
+
+                foreach (var child in dto.SubSections)
+                    child.PrimaryImagePath = childImages.FirstOrDefault(i => i.SectionId == child.Id)?.ImagePath;
+            }
             dto.Breadcrumbs = await BuildBreadcrumbsAsync(section);
             return ServiceResult<PostSectionDto>.Ok(dto);
         }
@@ -101,6 +119,27 @@ namespace Fandom_copy.Services
 
             _db.PostSections.Add(section);
 
+            var nextOrder = await _db.PostContentBlocks
+                .Where(b => b.PostId == dto.PostId && b.ContainerSectionId == dto.ParentSectionId)
+                .Select(b => (int?)b.Order)
+                .MaxAsync() ?? -1;
+            _db.PostContentBlocks.Add(new PostContentBlock
+            {
+                Id = Guid.NewGuid(), PostId = dto.PostId,
+                ContainerSectionId = dto.ParentSectionId,
+                Type = PostContentBlockType.Section, SectionId = section.Id,
+                Order = nextOrder + 1
+            });
+            if (!string.IsNullOrWhiteSpace(section.Text))
+            {
+                _db.PostContentBlocks.Add(new PostContentBlock
+                {
+                    Id = Guid.NewGuid(), PostId = dto.PostId,
+                    ContainerSectionId = section.Id, Type = PostContentBlockType.Text,
+                    Text = section.Text, Order = 0
+                });
+            }
+
             post.UpdatedAt = DateTime.UtcNow;
             _db.PostHistories.Add(new PostHistory
             {
@@ -125,9 +164,41 @@ namespace Fandom_copy.Services
             if (!await CanEditAsync(section.PostId, currentUserId))
                 return ServiceResult<PostSectionDto>.Fail("Немає прав на редагування");
 
+            var oldText = section.Text;
+            var newText = dto.Text?.Trim() ?? string.Empty;
+
             section.Title = dto.Title.Trim();
-            section.Text = dto.Text?.Trim() ?? string.Empty;
+            section.Text = newText;
             section.Order = dto.Order;
+
+            var firstTextBlock = await _db.PostContentBlocks
+                .Where(b => b.PostId == section.PostId && b.ContainerSectionId == section.Id && b.Type == PostContentBlockType.Text)
+                .OrderBy(b => b.Order)
+                .FirstOrDefaultAsync();
+
+            if (firstTextBlock is not null && firstTextBlock.Text == oldText)
+            {
+                firstTextBlock.Text = newText;
+            }
+            else if (firstTextBlock is null && !string.IsNullOrWhiteSpace(newText))
+            {
+                var blocks = await _db.PostContentBlocks
+                    .Where(b => b.PostId == section.PostId && b.ContainerSectionId == section.Id)
+                    .ToListAsync();
+
+                foreach (var block in blocks)
+                    block.Order += 1;
+
+                _db.PostContentBlocks.Add(new PostContentBlock
+                {
+                    Id = Guid.NewGuid(),
+                    PostId = section.PostId,
+                    ContainerSectionId = section.Id,
+                    Type = PostContentBlockType.Text,
+                    Text = newText,
+                    Order = 0
+                });
+            }
 
             var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == section.PostId);
             if (post is not null)
@@ -191,6 +262,10 @@ namespace Fandom_copy.Services
             foreach (var child in children)
                 await DeleteSectionRecursiveAsync(child);
 
+            var blocks = await _db.PostContentBlocks
+                .Where(b => b.ContainerSectionId == section.Id || b.SectionId == section.Id)
+                .ToListAsync();
+            _db.PostContentBlocks.RemoveRange(blocks);
             _db.PostSections.Remove(section);
         }
 

@@ -1,0 +1,156 @@
+@using Fandom_copy.DTOs.Posts
+@using Fandom_copy.Models
+@model PostContentEditorDto
+@{
+    ViewData["Title"] = "Структура публикации";
+    var containerId = Model.ContainerSectionId;
+}
+
+<nav class="wiki-back">
+    @if (containerId is null)
+    {
+        <a asp-controller="Posts" asp-action="Details" asp-route-id="@Model.PostId">← к публикации</a>
+    }
+    else
+    {
+        <a asp-controller="PostSections" asp-action="Details" asp-route-postId="@Model.PostId" asp-route-id="@containerId">← к подпосту</a>
+    }
+</nav>
+
+<section class="structure-shell">
+    <div class="structure-heading">
+        <div>
+            <p class="wiki-kicker">Редактор страницы</p>
+            <h1>Структура: @Model.Title</h1>
+            <p>Собирайте страницу как на Fandom: вступление, галерея, карточки разделов и вложенные страницы. Порядок блоков меняется стрелками.</p>
+        </div>
+        <a class="btn btn-primary" asp-controller="PostSections" asp-action="Create" asp-route-postId="@Model.PostId" asp-route-parentSectionId="@containerId">+ Создать под-пост</a>
+    </div>
+
+    @if (TempData["Error"] is string error) { <div class="alert alert-danger">@error</div> }
+
+    <div class="fandom-toolbelt">
+        <div>
+            <strong>Порядок блоков = порядок на странице</strong>
+            <span>Фото можно вставлять пачкой, подпосты становятся карточками, текст можно править прямо здесь.</span>
+        </div>
+        <div class="toolbelt-pills">
+            <span>Text</span>
+            <span>Images</span>
+            <span>Sub-pages</span>
+            <span>Fandom grid</span>
+        </div>
+    </div>
+
+    <div class="structure-grid">
+        <section class="structure-list">
+            @if (!Model.Blocks.Any())
+            {
+                <div class="empty-structure">
+                    <strong>Страница пока пустая.</strong>
+                    <span>Добавьте первый текст, фото или подпост через панель инструментов.</span>
+                </div>
+            }
+
+            @for (var i = 0; i < Model.Blocks.Count; i++)
+            {
+                var block = Model.Blocks[i];
+                <article class="structure-block">
+                    <div class="structure-block-bar">
+                        <span class="structure-order">#@(i + 1)</span>
+                        <span class="badge text-bg-secondary">@block.Type</span>
+                        <div class="structure-controls">
+                            <form asp-action="Move" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" asp-route-id="@block.Id" asp-route-direction="-1" method="post">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-outline-secondary" title="Выше" disabled="@(i == 0)">↑</button>
+                            </form>
+                            <form asp-action="Move" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" asp-route-id="@block.Id" asp-route-direction="1" method="post">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-outline-secondary" title="Ниже" disabled="@(i == Model.Blocks.Count - 1)">↓</button>
+                            </form>
+                            <form asp-action="Delete" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" asp-route-id="@block.Id" method="post" onsubmit="return confirm('Убрать этот блок из структуры?');">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-outline-danger" title="Убрать">×</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    @if (block.Type == PostContentBlockType.Text)
+                    {
+                        <form asp-action="UpdateText" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" asp-route-id="@block.Id" method="post" class="structure-edit-form">
+                            @Html.AntiForgeryToken()
+                            <label class="form-label">Текстовый блок</label>
+                            <textarea name="text" rows="5" class="form-control">@block.Text</textarea>
+                            <button class="btn btn-sm btn-outline-primary mt-2">Сохранить текст</button>
+                        </form>
+                    }
+                    else if (block.Type == PostContentBlockType.Image)
+                    {
+                        <div class="structure-image-row">
+                            <img src="@Url.Content(block.ImagePath)" alt="@(string.IsNullOrWhiteSpace(block.ImageCaption) ? "Изображение" : block.ImageCaption)" />
+                            <form asp-action="UpdateImageCaption" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" asp-route-id="@block.Id" method="post" class="structure-edit-form">
+                                @Html.AntiForgeryToken()
+                                <label class="form-label">Подпись к фото</label>
+                                <input name="imageCaption" value="@block.ImageCaption" maxlength="240" class="form-control" />
+                                <button class="btn btn-sm btn-outline-primary mt-2">Сохранить подпись</button>
+                            </form>
+                        </div>
+                    }
+                    else if (block.Type == PostContentBlockType.Section)
+                    {
+                        <div class="structure-section-link">
+                            <span class="wiki-topic-placeholder">!</span>
+                            <div>
+                                <strong>@(block.SectionTitle ?? "Под-пост")</strong>
+                                <p>Карточка-переход в подпост. Удаление блока уберёт карточку из этой структуры, сам подпост останется в базе.</p>
+                            </div>
+                        </div>
+                    }
+                </article>
+            }
+        </section>
+
+        <aside class="structure-tools">
+            <form asp-action="AddText" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" method="post" class="tool-card">
+                @Html.AntiForgeryToken()
+                <h2>+ Текст</h2>
+                <div class="template-row">
+                    <button type="button" class="template-chip" data-template-target="#NewText" data-template="Заголовок&#10;Короткое описание раздела...">Заголовок</button>
+                    <button type="button" class="template-chip" data-template-target="#NewText" data-template="Факт: ">Факт</button>
+                    <button type="button" class="template-chip" data-template-target="#NewText" data-template="* Пункт 1&#10;* Пункт 2&#10;* Пункт 3">Список</button>
+                </div>
+                <textarea asp-for="NewText" rows="5" class="form-control" placeholder="Абзац, описание, правила, вступление..."></textarea>
+                <button class="btn btn-outline-primary mt-2">Добавить текст</button>
+            </form>
+
+            <form asp-action="AddImage" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" method="post" enctype="multipart/form-data" class="tool-card">
+                @Html.AntiForgeryToken()
+                <h2>+ Фото</h2>
+                <input type="file" name="imageFiles" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="form-control js-image-input" data-preview="#structureImagePreview" />
+                <input asp-for="NewImageCaption" maxlength="240" class="form-control mt-2" placeholder="Подпись под фото" />
+                <small class="text-muted">JPG, PNG, GIF или WEBP до 5 МБ.</small>
+                <div id="structureImagePreview" class="image-preview-grid"></div>
+                <button class="btn btn-outline-primary mt-2">Загрузить фото</button>
+            </form>
+
+            <form asp-action="AddExistingSection" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" method="post" class="tool-card">
+                @Html.AntiForgeryToken()
+                <h2>+ Под-пост в структуру</h2>
+                @if (Model.AvailableSections.Any())
+                {
+                    <select name="linkedSectionId" class="form-select">
+                        @foreach (var availableSection in Model.AvailableSections)
+                        {
+                            <option value="@availableSection.Id">@availableSection.Title</option>
+                        }
+                    </select>
+                    <button class="btn btn-outline-primary mt-2">Вставить карточку</button>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">Все подпосты этого уровня уже вставлены. Можно создать новый.</p>
+                }
+            </form>
+        </aside>
+    </div>
+</section>

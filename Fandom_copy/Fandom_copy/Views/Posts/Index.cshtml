@@ -4,11 +4,14 @@
     ViewData["Title"] = "Пости";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Пости</h1>
+<div class="posts-heading">
+    <div>
+        <p class="wiki-kicker">Спільнота FandomHub</p>
+        <h1>Пости</h1>
+    </div>
     @if (User?.Identity?.IsAuthenticated == true)
     {
-        <a asp-controller="Posts" asp-action="Create" class="btn btn-primary">Створити пост</a>
+        <a asp-controller="Posts" asp-action="Create" class="btn btn-primary">+ Створити пост</a>
     }
 </div>
 
@@ -23,24 +26,51 @@
 
 @if (!Model.Any())
 {
-    <p class="text-muted">Постів ще немає.</p>
+    <div class="empty-structure">
+        <strong>Постів ще немає</strong>
+        <span>Станьте першим — створіть пост і почніть наповнювати вікі.</span>
+    </div>
 }
 else
 {
-    <div class="list-group">
+    <div class="posts-list">
         @foreach (var p in Model)
         {
-            <a asp-controller="Posts" asp-action="Details" asp-route-id="@p.Id"
-               class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">@p.Title</h5>
-                    <small class="text-muted">@p.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+            var cover = !string.IsNullOrWhiteSpace(p.IconPath)
+                ? p.IconPath
+                : p.ContentBlocks
+                    .Where(b => b.Type == PostContentBlockType.Image)
+                    .OrderBy(b => b.Order)
+                    .Select(b => b.ImagePath)
+                    .FirstOrDefault();
+
+            <a asp-controller="Posts" asp-action="Details" asp-route-id="@p.Id" class="post-row">
+                <div class="post-row-thumb">
+                    @if (!string.IsNullOrWhiteSpace(cover))
+                    {
+                        <img src="@Url.Content(cover)" alt="@p.Title" />
+                    }
+                    else
+                    {
+                        <span class="wiki-topic-placeholder">@p.Title.Substring(0, 1).ToUpper()</span>
+                    }
                 </div>
-                <p class="mb-1">@p.Description</p>
-                <small class="text-muted">
-                    Категорія: @(p.CategoryName ?? "—")
-                    @(p.IsPublic ? "· Публічний" : "· Приватний")
-                </small>
+                <div class="post-row-body">
+                    <div class="post-row-top">
+                        <h5>@p.Title</h5>
+                        <small class="post-row-date">@p.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(p.Description))
+                    {
+                        <p class="post-row-desc">@p.Description</p>
+                    }
+                    <div class="post-row-meta">
+                        <span class="post-tag">@(p.CategoryName ?? "—")</span>
+                        <span class="post-tag @(p.IsPublic ? "post-tag-public" : "post-tag-private")">
+                            @(p.IsPublic ? "Публічний" : "Приватний")
+                        </span>
+                    </div>
+                </div>
             </a>
         }
     </div>

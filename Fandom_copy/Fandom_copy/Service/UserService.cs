@@ -82,6 +82,47 @@ namespace Fandom_copy.Services
             return ServiceResult<User>.Ok(user);
         }
 
+        public async Task<ServiceResult<User>> ExternalLoginAsync(string email, string? displayName)
+        {
+            email = email.Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(email))
+                return ServiceResult<User>.Fail("Провайдер не повернув email. Дозвольте доступ до email у Google/Facebook.");
+
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user is not null)
+            {
+                if (user.IsBanned)
+                    return ServiceResult<User>.Fail("Акаунт заблоковано");
+
+                if (!user.EmailConfirmed)
+                {
+                    user.EmailConfirmed = true;
+                    user.EmailConfirmationToken = null;
+                    user.EmailConfirmationTokenExpiresAt = null;
+                    await _db.SaveChangesAsync();
+                }
+
+                return ServiceResult<User>.Ok(user);
+            }
+
+            user = new User
+            {
+                Id = Guid.NewGuid(),
+                Login = await GenerateUniqueLoginAsync(displayName, email),
+                Email = email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(TokenGenerator.Generate(64)),
+                GlobalRole = GlobalRole.User,
+                RegistrationDate = DateTime.UtcNow,
+                IsBanned = false,
+                EmailConfirmed = true
+            };
+
+            _db.Users.Add(user);
+            await _db.SaveChangesAsync();
+
+            return ServiceResult<User>.Ok(user);
+        }
+
         public async Task<ServiceResult> ConfirmEmailAsync(Guid userId, string token)
         {
             var user = await _db.Users.FindAsync(userId);
@@ -248,6 +289,38 @@ namespace Fandom_copy.Services
         {
             user.EmailConfirmationToken = TokenGenerator.Generate();
             user.EmailConfirmationTokenExpiresAt = DateTime.UtcNow.Add(EmailConfirmationTokenLifetime);
+        }
+
+        private async Task<string> GenerateUniqueLoginAsync(string? displayName, string email)
+        {
+            var source = string.IsNullOrWhiteSpace(displayName)
+                ? email.Split('@')[0]
+                : displayName.Trim();
+
+            var baseLogin = new string(source
+                .ToLowerInvariant()
+                .Select(ch => char.IsLetterOrDigit(ch) ? ch : '_')
+                .ToArray())
+                .Trim('_');
+
+            if (baseLogin.Length < 3)
+                baseLogin = "user";
+
+            if (baseLogin.Length > 24)
+                baseLogin = baseLogin[..24].Trim('_');
+
+            var login = baseLogin;
+            var suffix = 1;
+
+            while (await _db.Users.AnyAsync(u => u.Login == login))
+            {
+                var suffixText = suffix.ToString();
+                var maxBaseLength = Math.Min(baseLogin.Length, 32 - suffixText.Length - 1);
+                login = $"{baseLogin[..maxBaseLength]}_{suffixText}";
+                suffix++;
+            }
+
+            return login;
         }
 
         private async Task SendEmailConfirmationLinkAsync(User user)

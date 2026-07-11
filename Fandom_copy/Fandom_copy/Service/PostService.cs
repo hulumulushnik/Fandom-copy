@@ -47,6 +47,8 @@ namespace Fandom_copy.Services
                 // Loading the whole collection lets EF reconnect every level of
                 // the self-referencing section tree, not only one nested level.
                 .Include(p => p.Sections)
+                .Include(p => p.ContentBlocks)
+                    .ThenInclude(b => b.Section)
                 .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
             if (post is null)
@@ -92,6 +94,15 @@ namespace Fandom_copy.Services
             };
 
             _db.Posts.Add(post);
+
+            if (!string.IsNullOrWhiteSpace(post.Description))
+            {
+                _db.PostContentBlocks.Add(new PostContentBlock
+                {
+                    Id = Guid.NewGuid(), PostId = post.Id,
+                    Type = PostContentBlockType.Text, Text = post.Description, Order = 0
+                });
+            }
 
             // Автор одразу стає власником поста — це закриває проблему "будь-хто редагує чужий пост".
             _db.PostMembers.Add(new PostMember
@@ -140,11 +151,43 @@ namespace Fandom_copy.Services
             if (!categoryExists)
                 return ServiceResult<PostDto>.Fail("Категорію не знайдено");
 
+            var oldDescription = post.Description;
+            var newDescription = dto.Description?.Trim() ?? string.Empty;
+
             post.Title = dto.Title.Trim();
-            post.Description = dto.Description?.Trim() ?? string.Empty;
+            post.Description = newDescription;
             post.CategoryId = dto.CategoryId;
             post.IsPublic = dto.IsPublic;
             post.UpdatedAt = DateTime.UtcNow;
+
+            var firstRootText = await _db.PostContentBlocks
+                .Where(b => b.PostId == post.Id && b.ContainerSectionId == null && b.Type == PostContentBlockType.Text)
+                .OrderBy(b => b.Order)
+                .FirstOrDefaultAsync();
+
+            if (firstRootText is not null && firstRootText.Text == oldDescription)
+            {
+                firstRootText.Text = newDescription;
+            }
+            else if (firstRootText is null && !string.IsNullOrWhiteSpace(newDescription))
+            {
+                var rootBlocks = await _db.PostContentBlocks
+                    .Where(b => b.PostId == post.Id && b.ContainerSectionId == null)
+                    .ToListAsync();
+
+                foreach (var block in rootBlocks)
+                    block.Order += 1;
+
+                _db.PostContentBlocks.Add(new PostContentBlock
+                {
+                    Id = Guid.NewGuid(),
+                    PostId = post.Id,
+                    ContainerSectionId = null,
+                    Type = PostContentBlockType.Text,
+                    Text = newDescription,
+                    Order = 0
+                });
+            }
 
             _db.PostHistories.Add(new PostHistory
             {

@@ -1,0 +1,57 @@
+@using Fandom_copy.Localization
+@{
+    string currentLang = ViewBag.CurrentLang;
+    string currentTheme = ViewBag.CurrentTheme;
+    ViewData["Title"] = UiText.T(currentLang, "settings.title");
+}
+
+<section class="editor-page settings-page">
+    <div class="editor-heading">
+        <p class="wiki-kicker">@UiText.T(currentLang, "settings.kicker")</p>
+        <h1>@UiText.T(currentLang, "settings.title")</h1>
+        <p>@UiText.T(currentLang, "settings.intro")</p>
+    </div>
+
+    @if (TempData["Message"] is string)
+    {
+        <div class="alert alert-success">@UiText.T(currentLang, "settings.saved")</div>
+    }
+
+    <form asp-controller="Settings" asp-action="Save" method="post" class="editor-card settings-card">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="returnUrl" value="@Context.Request.Headers["Referer"]" />
+
+        <div class="settings-block">
+            <h2>@UiText.T(currentLang, "settings.lang.title")</h2>
+            <p class="settings-hint">@UiText.T(currentLang, "settings.lang.hint")</p>
+            <div class="lang-grid">
+                @foreach (var (code, label) in UiText.SupportedLanguages)
+                {
+                    <label class="lang-option @(currentLang == code ? "active" : "")">
+                        <input type="radio" name="lang" value="@code" checked="@(currentLang == code)" />
+                        <span>@label</span>
+                    </label>
+                }
+            </div>
+        </div>
+
+        <div class="settings-block">
+            <h2>@UiText.T(currentLang, "settings.theme.title")</h2>
+            <p class="settings-hint">@UiText.T(currentLang, "settings.theme.hint")</p>
+            <div class="theme-grid">
+                @foreach (var (code, _) in UiText.SupportedThemes)
+                {
+                    <label class="theme-option theme-option-@code @(currentTheme == code ? "active" : "")">
+                        <input type="radio" name="theme" value="@code" checked="@(currentTheme == code)" />
+                        <span class="theme-swatch"></span>
+                        <span>@UiText.ThemeLabel(currentLang, code)</span>
+                    </label>
+                }
+            </div>
+        </div>
+
+        <div class="editor-actions">
+            <button type="submit" class="btn btn-primary">@UiText.T(currentLang, "settings.save")</button>
+        </div>
+    </form>
+</section>
