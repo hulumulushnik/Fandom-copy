@@ -1,4 +1,60 @@
 @model Fandom_copy.DTOs.Auth.LoginRequestDto
-@{ ViewData["Title"] = "Sign in"; }
-<section class="account-shell"><div class="account-card"><p class="eyebrow">FANDOM</p><h1>Welcome back</h1><p class="muted">Sign in to continue creating and discussing.</p>@if (TempData["Success"] is string message) { <div class="notice success">@message</div> }<form method="post" novalidate><input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]"/><div asp-validation-summary="ModelOnly" class="form-error"></div><label asp-for="LoginOrEmail">Username or email</label><input asp-for="LoginOrEmail" autocomplete="username"/><span asp-validation-for="LoginOrEmail"></span><label asp-for="Password">Password</label><input asp-for="Password" type="password" autocomplete="current-password"/><span asp-validation-for="Password"></span><label class="check"><input asp-for="RememberMe"/> Keep me signed in</label><button type="submit" class="primary-btn">Sign in</button></form><div class="account-links"><a asp-action="ForgotPassword">Forgot password?</a><a asp-action="ResendConfirmation">Resend confirmation</a></div><p class="account-footer">New here? <a asp-action="Register">Create account</a></p></div></section>
+@{
+    ViewData["Title"] = "Sign in";
+    var externalProviders = ViewData["ExternalProviders"] as string[] ?? Array.Empty<string>();
+}
+
+<section class="account-shell">
+    <div class="account-card">
+        <p class="eyebrow">FANDOM</p>
+        <h1>Welcome back</h1>
+        <p class="muted">Sign in to continue creating and discussing.</p>
+
+        @if (TempData["Success"] is string message)
+        {
+            <div class="notice success">@message</div>
+        }
+
+        @if (TempData["Error"] is string error)
+        {
+            <div class="notice error">@error</div>
+        }
+
+        @if (externalProviders.Length > 0)
+        {
+            <div class="external-auth">
+                <p>Continue with</p>
+                @foreach (var provider in externalProviders)
+                {
+                    <form asp-action="ExternalLogin" method="post">
+                        <input type="hidden" name="provider" value="@provider" />
+                        <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                        <button type="submit" class="oauth-btn @provider.ToLowerInvariant()">@provider</button>
+                    </form>
+                }
+            </div>
+            <div class="divider"><span>or</span></div>
+        }
+
+        <form method="post" novalidate>
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+            <div asp-validation-summary="ModelOnly" class="form-error"></div>
+            <label asp-for="LoginOrEmail">Username or email</label>
+            <input asp-for="LoginOrEmail" autocomplete="username" />
+            <span asp-validation-for="LoginOrEmail"></span>
+            <label asp-for="Password">Password</label>
+            <input asp-for="Password" type="password" autocomplete="current-password" />
+            <span asp-validation-for="Password"></span>
+            <label class="check"><input asp-for="RememberMe" /> Keep me signed in</label>
+            <button type="submit" class="primary-btn">Sign in</button>
+        </form>
+
+        <div class="account-links">
+            <a asp-action="ForgotPassword">Forgot password?</a>
+            <a asp-action="ResendConfirmation">Resend confirmation</a>
+        </div>
+        <p class="account-footer">New here? <a asp-action="Register" asp-route-returnUrl="@ViewData["ReturnUrl"]">Create account</a></p>
+    </div>
+</section>
+
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

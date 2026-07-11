@@ -12,7 +12,9 @@ namespace Fandom_copy.DTOs.Posts
         public bool IsPublic { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public string? IconPath { get; set; }
         public List<PostSectionDto> Sections { get; set; } = new();
+        public List<PostContentBlockDto> ContentBlocks { get; set; } = new();
 
         /// <summary>
         /// Role of the current viewer for this post, or <c>null</c> if the viewer is
@@ -27,7 +29,7 @@ namespace Fandom_copy.DTOs.Posts
 
         public static PostDto FromEntity(Post post, PostRole? currentUserRole = null)
         {
-            return new PostDto
+            var dto = new PostDto
             {
                 Id = post.Id,
                 Title = post.Title,
@@ -37,13 +39,30 @@ namespace Fandom_copy.DTOs.Posts
                 IsPublic = post.IsPublic,
                 CreatedAt = post.CreatedAt,
                 UpdatedAt = post.UpdatedAt,
+                IconPath = post.IconPath,
                 CurrentUserRole = currentUserRole,
                 Sections = post.Sections
                     .Where(s => s.ParentSectionId == null)
                     .OrderBy(s => s.Order)
                     .Select(s => PostSectionDto.FromEntity(s, includeSubSections: false))
+                    .ToList(),
+                ContentBlocks = post.ContentBlocks
+                    .Where(b => b.ContainerSectionId == null)
+                    .OrderBy(b => b.Order)
+                    .Select(PostContentBlockDto.FromEntity)
                     .ToList()
             };
+
+            foreach (var section in dto.Sections)
+            {
+                section.PrimaryImagePath = post.ContentBlocks
+                    .Where(b => b.ContainerSectionId == section.Id && b.Type == PostContentBlockType.Image)
+                    .OrderBy(b => b.Order)
+                    .Select(b => b.ImagePath)
+                    .FirstOrDefault();
+            }
+
+            return dto;
         }
     }
 }

@@ -23,3 +23,296 @@ body { margin-bottom: 60px; background: #0d1020; color: #e9eaf4; font-family: In
 .nav-link, .nav-account a { color: #c6c9db !important; text-decoration: none; padding: .45rem .75rem; }.nav-account { display:flex; align-items:center; gap:.45rem; }.nav-account form { margin:0; }.nav-account button { background:transparent; border:0; color:#c6c9db; padding:.45rem .75rem; }.nav-join { background:#7559d9; border-radius:8px; color:#fff !important; }
 .account-shell { min-height: calc(100vh - 150px); display:grid; place-items:center; padding:48px 18px; }.account-card { width:min(100%, 460px); background:#171b33; border:1px solid #303658; border-radius:18px; padding:34px; box-shadow:0 18px 55px #0004; }.account-card h1 { font-size:1.8rem; margin:0 0 8px; }.eyebrow { color:#a98cff; font-size:.72rem; font-weight:800; letter-spacing:.14em; margin:0 0 8px; }.muted { color:#aeb3ca; }.account-card form { display:grid; gap:8px; margin-top:24px; }.account-card label { font-size:.9rem; font-weight:650; }.account-card input { width:100%; box-sizing:border-box; border:1px solid #3a4165; border-radius:9px; background:#0f1326; color:#fff; padding:11px 12px; }.account-card span, .form-error { color:#ff9b9b; font-size:.82rem; }.primary-btn,.secondary-btn { display:inline-block; border:0; border-radius:9px; padding:12px 16px; margin-top:12px; text-align:center; font-weight:750; text-decoration:none; cursor:pointer; }.primary-btn { background:#8b6df0; color:white; }.secondary-btn { border:1px solid #6c6294; color:#d9d2ff; }.account-footer,.account-links { margin:20px 0 0; text-align:center; color:#aeb3ca; }.account-links { display:flex; justify-content:space-between; font-size:.9rem; }.account-card a { color:#bbaaff; }.check { display:flex; gap:8px; align-items:center; color:#c6c9db; }.check input { width:auto; }.notice { margin:18px 0; padding:12px; border-radius:9px; }.success { background:#173c36; color:#baf2d3; }.status-card { text-align:center; }.status-icon { width:48px; height:48px; margin:0 auto 16px; border-radius:50%; display:grid; place-items:center; font-size:1.5rem; font-weight:900; }.ok { background:#174b3a; color:#7effb3; }.bad { background:#4a2532; color:#ffb2c2; }.profile-shell { max-width:960px; margin:48px auto; padding:0 18px; }.profile-heading { display:flex; gap:16px; align-items:center; margin-bottom:28px; }.profile-heading h1 { margin:0; }.avatar { width:58px; height:58px; display:grid; place-items:center; border-radius:16px; font-size:1.5rem; font-weight:800; background:#7457dc; }.profile-grid { display:grid; grid-template-columns:1.4fr .8fr; gap:20px; }.profile-card { background:#171b33; border:1px solid #303658; border-radius:16px; padding:25px; }.profile-card h2 { font-size:1.2rem; margin-top:0; }.profile-card form { display:grid; gap:9px; }.profile-card input { background:#0f1326; color:#fff; border:1px solid #3a4165; border-radius:8px; padding:11px; }.verification,.role-pill { display:inline-block; width:max-content; padding:5px 9px; border-radius:99px; font-size:.8rem; }.verified { color:#9df1c1; background:#173c36; }.unverified { color:#ffd08a; background:#49361f; }.role-pill { color:#d8ceff; background:#33295d; }.security-card hr { border-color:#303658; margin:24px 0; }
 @media (max-width: 575px) { .fandom-nav { padding:8px 18px; }.nav-account { margin-top:10px; }.profile-grid { grid-template-columns:1fr; }.account-card { padding:25px 20px; }.account-links { gap:12px; flex-direction:column; }.navbar-collapse { padding:10px 0; } }
+
+.container { max-width: 1180px; }
+a { color: #ff735f; }
+.wiki-back { margin: 26px 0 18px; color: #9da2b8; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.wiki-back a { color: #ffd0c9; text-decoration: none; }
+.wiki-hero { margin: 24px auto 28px; text-align: center; max-width: 980px; padding: 28px 20px 20px; }
+.wiki-hero-compact { margin-bottom: 18px; }
+.wiki-kicker { margin: 0 0 8px; color: #f05a43; font-size: .78rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.wiki-hero h1 { margin: 0; color: #f7f0e6; font-weight: 950; line-height: 1.08; text-shadow: 0 4px 0 #0007; }
+.wiki-hero h1 em { font-style: italic; }
+.wiki-hero p { max-width: 880px; margin: 18px auto 0; color: #e7e8ef; font-size: 1.08rem; line-height: 1.75; }
+.wiki-actions { margin-top: 22px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.wiki-content { max-width: 980px; margin: 0 auto 56px; }
+.wiki-copy { margin: 16px 0 22px; color: #f1f2f8; white-space: pre-wrap; line-height: 1.75; font-size: 1.03rem; }
+.wiki-image-block { width: min(100%, 820px); margin: 28px auto; border: 1px solid #3e455f; border-radius: 14px; background: #171b33; overflow: hidden; box-shadow: 0 20px 60px #0005; }
+.wiki-image-block img { width: 100%; max-height: 560px; object-fit: cover; display: block; background: #0a0d18; }
+.wiki-image-block figcaption { padding: 10px 14px; color: #cfd2e3; border-top: 1px solid #303658; font-size: .92rem; }
+.wiki-topic-grid { display: flex; flex-wrap: wrap; flex-direction: row; justify-content: center; gap: 26px 22px; margin: 34px auto; }
+.wiki-topic-card { color: #f05a43; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 128px; padding: 4px; transition: transform .18s ease, filter .18s ease; }
+.wiki-topic-card:hover { transform: translateY(-4px); color: #ff806e; filter: brightness(1.08); }
+.wiki-topic-card:hover .wiki-topic-art { border-color: #ff735f; box-shadow: 0 0 0 4px #ff735f33, 0 12px 28px #0006; }
+.wiki-topic-card .wiki-topic-art { width: 112px; height: 112px; border-radius: 50%; border: 4px solid #d94432; background: #22283f; display: grid; place-items: center; box-shadow: 0 12px 28px #0006; overflow: hidden; transition: border-color .18s ease, box-shadow .18s ease; }
+.wiki-topic-card img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.wiki-topic-card strong { text-align: center; font-weight: 950; font-size: 1.05rem; line-height: 1.15; }
+.wiki-topic-card small { color: #aeb3ca; font-weight: 700; }
+.wiki-topic-placeholder { width: 100%; height: 100%; display: grid; place-items: center; background: #d94432; color: #171b33; font-size: 3.4rem; font-weight: 950; }
+.wiki-topic-card .wiki-topic-placeholder { border-radius: 50%; }
+.structure-shell { margin: 26px 0 56px; }
+.structure-heading { display: flex; justify-content: space-between; align-items: end; gap: 18px; margin-bottom: 22px; }
+.structure-heading h1 { color: #fff7ec; font-weight: 950; margin: 0 0 6px; }
+.structure-heading p { color: #b9bfd4; margin: 0; }
+.structure-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; align-items: start; }
+.structure-list, .structure-tools { display: grid; gap: 14px; }
+.structure-block, .tool-card, .empty-structure { background: #171b33; border: 1px solid #303658; border-radius: 16px; padding: 16px; box-shadow: 0 16px 45px #0004; }
+.empty-structure { display: grid; gap: 4px; color: #c7cbda; border-style: dashed; text-align: center; padding: 42px 20px; }
+.structure-block-bar { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #303658; padding-bottom: 12px; margin-bottom: 14px; }
+.structure-order { color: #ff735f; font-weight: 950; }
+.structure-controls { margin-left: auto; display: flex; gap: 6px; }
+.structure-controls form { margin: 0; }
+.structure-edit-form textarea, .structure-edit-form input, .tool-card textarea, .tool-card input, .tool-card select { background: #0f1326; color: #fff; border-color: #3a4165; }
+.structure-image-row { display: grid; grid-template-columns: 180px 1fr; gap: 16px; align-items: start; }
+.structure-image-row img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 12px; border: 1px solid #3a4165; background: #0f1326; }
+.structure-section-link { display: flex; gap: 14px; align-items: center; color: #e8eaf5; }
+.structure-section-link .wiki-topic-placeholder { width: 64px; height: 64px; border-radius: 10px; font-size: 2rem; flex: 0 0 64px; }
+.structure-section-link p { margin: 4px 0 0; color: #adb3c8; }
+.tool-card h2 { color: #fff7ec; font-size: 1.05rem; font-weight: 900; margin: 0 0 12px; }
+.tool-card small { display: block; margin-top: 8px; }
+.editor-page { margin: 32px 0 58px; }
+.editor-heading { max-width: 860px; margin-bottom: 20px; }
+.editor-heading h1 { color: #fff7ec; font-weight: 950; margin: 0 0 8px; }
+.editor-heading p { color: #b9bfd4; margin: 0; }
+.editor-card { background: #171b33; border: 1px solid #303658; border-radius: 18px; padding: 22px; box-shadow: 0 18px 55px #0005; }
+.editor-two-columns { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; align-items: start; }
+.editor-card input, .editor-card textarea, .editor-card select { background: #0f1326; color: #fff; border-color: #3a4165; }
+.editor-card input:focus, .editor-card textarea:focus, .editor-card select:focus { background: #11162b; color: #fff; border-color: #ff735f; box-shadow: 0 0 0 .2rem #ff735f22; }
+.editor-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; padding-top: 18px; border-top: 1px solid #303658; }
+.media-uploader { background: #101528; border: 1px solid #303658; border-radius: 16px; padding: 16px; }
+.media-uploader h2 { color: #fff7ec; font-size: 1.05rem; font-weight: 900; margin: 0 0 8px; }
+.media-uploader p { color: #b8bed2; font-size: .92rem; margin: 0 0 12px; }
+.image-preview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 12px; }
+.image-preview-grid figure, .existing-media-strip figure { margin: 0; background: #171b33; border: 1px solid #303658; border-radius: 12px; overflow: hidden; }
+.image-preview-grid img, .existing-media-strip img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
+.image-preview-grid figcaption, .existing-media-strip figcaption { padding: 6px 8px; color: #c8ccdc; font-size: .75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.existing-media-strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; max-height: 360px; overflow: auto; padding-right: 4px; }
+.fandom-toolbelt { display: flex; justify-content: space-between; gap: 16px; align-items: center; background: linear-gradient(135deg, #211b2f, #141a31); border: 1px solid #3a4165; border-radius: 16px; padding: 16px 18px; margin-bottom: 18px; box-shadow: 0 14px 38px #0004; }
+.fandom-toolbelt strong { color: #fff7ec; display: block; }
+.fandom-toolbelt span { color: #b9bfd4; }
+.toolbelt-pills { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.toolbelt-pills span, .template-chip { border: 1px solid #d94432; color: #ffd0c9; background: #2a1820; border-radius: 999px; padding: 6px 10px; font-size: .78rem; font-weight: 800; }
+.template-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+.template-chip { cursor: pointer; }
+.template-chip:hover { background: #d94432; color: #fff; }
+@media (max-width: 900px) { .structure-grid { grid-template-columns: 1fr; }.structure-heading { align-items: start; flex-direction: column; }.structure-tools { grid-template-columns: 1fr; }.wiki-topic-card .wiki-topic-art { width: 96px; height: 96px; } }
+@media (max-width: 900px) { .editor-two-columns { grid-template-columns: 1fr; }.fandom-toolbelt { align-items: start; flex-direction: column; }.toolbelt-pills { justify-content: flex-start; } }
+@media (max-width: 575px) { .wiki-hero { padding-inline: 0; }.wiki-hero h1 { font-size: 1.8rem; }.structure-image-row { grid-template-columns: 1fr; }.wiki-topic-grid { gap: 20px 16px; }.wiki-topic-card { width: 96px; }.wiki-topic-card .wiki-topic-art { width: 88px; height: 88px; }.editor-card { padding: 16px; }.image-preview-grid, .existing-media-strip { grid-template-columns: 1fr; } }
+
+/* ===================== Fandom-style shell: top search + icon sidebar ===================== */
+.fandom-nav-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: 10px 0; }
+.fandom-search { display: flex; align-items: center; gap: 10px; background: #0f1326; border: 1px solid #303658; border-radius: 999px; padding: 9px 16px; flex: 1 1 320px; max-width: 560px; transition: border-color .15s ease, background .15s ease; }
+.fandom-search:focus-within { border-color: #ff735f; background: #11162b; }
+.fandom-search svg { width: 17px; height: 17px; color: #8b90ad; flex: 0 0 auto; }
+.fandom-search input { background: transparent; border: 0; outline: 0; color: #fff; flex: 1; font-size: .92rem; min-width: 0; }
+.fandom-search input::placeholder { color: #6d7291; }
+
+.fandom-shell { display: flex; align-items: stretch; min-height: calc(100vh - 92px); }
+.fandom-sidebar { flex: 0 0 92px; width: 92px; background: #12162b; border-right: 1px solid #292e49; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 20px 10px; position: sticky; top: 0; align-self: flex-start; height: calc(100vh - 92px); overflow-y: auto; }
+.fandom-sidebar a { display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; color: #9da2c4; text-decoration: none; font-size: .72rem; font-weight: 700; padding: 12px 4px; border-radius: 14px; transition: background .15s ease, color .15s ease; }
+.fandom-sidebar a svg { width: 22px; height: 22px; }
+.fandom-sidebar a:hover { background: #1c2140; color: #fff; }
+.fandom-sidebar a.active { background: #241d3d; color: #ffb2a4; }
+.fandom-sidebar a.active svg { color: #ff735f; }
+
+.fandom-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.fandom-main .footer { margin-top: auto; }
+
+@media (max-width: 700px) {
+  .fandom-shell { flex-direction: column; min-height: 0; }
+  .fandom-sidebar { position: sticky; top: 0; z-index: 20; width: 100%; flex: 0 0 auto; height: auto; flex-direction: row; justify-content: space-around; border-right: 0; border-bottom: 1px solid #292e49; padding: 8px 6px; }
+  .fandom-sidebar a { flex-direction: row; gap: 6px; padding: 8px 10px; font-size: .68rem; }
+  .fandom-sidebar a span { display: none; }
+  .fandom-nav-row { justify-content: space-between; }
+  .fandom-search { order: 3; flex-basis: 100%; max-width: none; }
+}
+
+/* ===================== Home page ===================== */
+.home-section { margin: 30px 0 42px; }
+.home-section-heading { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; gap: 12px; }
+.home-section-heading h2 { margin: 0; font-size: 1.25rem; font-weight: 900; color: #fff7ec; }
+.home-view-all { font-size: .82rem; font-weight: 800; color: #ffb2a4; text-decoration: none; text-transform: uppercase; letter-spacing: .04em; }
+.home-view-all:hover { color: #ff735f; }
+
+.home-jump-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
+.home-jump-card { display: block; background: #171b33; border: 1px solid #303658; border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit; box-shadow: 0 14px 34px #0004; transition: transform .15s ease, border-color .15s ease; }
+.home-jump-card:hover { transform: translateY(-3px); border-color: #ff735f; }
+.home-jump-thumb { aspect-ratio: 16/9; background: #0f1326; display: grid; place-items: center; }
+.home-jump-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.home-jump-thumb .wiki-topic-placeholder { width: 100%; height: 100%; font-size: 2.4rem; }
+.home-jump-info { padding: 12px 14px; }
+.home-jump-info strong { display: block; color: #fff7ec; font-size: .98rem; margin-bottom: 3px; }
+.home-jump-info small { color: #a3a8c2; }
+
+.home-recent-row { display: flex; gap: 22px; overflow-x: auto; padding-bottom: 10px; }
+.home-recent-circle { flex: 0 0 92px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: #d8dae8; }
+.home-recent-avatar { width: 76px; height: 76px; border-radius: 50%; background: #7457dc; color: #fff; font-weight: 900; font-size: 1.6rem; display: grid; place-items: center; overflow: hidden; border: 2px solid #303658; transition: border-color .15s ease, transform .15s ease; }
+.home-recent-circle:hover .home-recent-avatar { border-color: #ff735f; transform: translateY(-2px); }
+.home-recent-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.home-recent-title { font-size: .78rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 92px; }
+
+.home-category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.home-category-card { display: flex; align-items: center; gap: 14px; background: #171b33; border: 1px solid #303658; border-radius: 14px; padding: 14px; text-decoration: none; color: inherit; transition: transform .15s ease, border-color .15s ease; }
+.home-category-card:hover { transform: translateY(-3px); border-color: #ff735f; }
+.home-category-cover { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 12px; overflow: hidden; background: #0f1326; display: grid; place-items: center; }
+.home-category-cover img { width: 100%; height: 100%; object-fit: cover; }
+.home-category-cover .wiki-topic-placeholder { width: 100%; height: 100%; font-size: 1.4rem; }
+.home-category-info strong { display: block; color: #fff7ec; }
+.home-category-info small { color: #a3a8c2; }
+
+/* ===================== Search ===================== */
+.search-heading { margin: 26px 0 24px; }
+.search-heading h1 { color: #fff7ec; font-weight: 950; margin: 0 0 18px; }
+.search-page-form { display: flex; align-items: center; gap: 12px; background: #0f1326; border: 1px solid #303658; border-radius: 999px; padding: 10px 10px 10px 20px; max-width: 640px; }
+.search-page-form svg { width: 18px; height: 18px; color: #8b90ad; flex: 0 0 auto; }
+.search-page-form input { flex: 1; background: transparent; border: 0; outline: 0; color: #fff; font-size: .96rem; min-width: 0; }
+.search-page-form .btn { border-radius: 999px; padding: 8px 20px; }
+
+.search-results { display: grid; gap: 14px; margin-bottom: 40px; }
+.search-result-card { display: block; background: #171b33; border: 1px solid #303658; border-radius: 14px; padding: 16px 18px; text-decoration: none; color: inherit; transition: border-color .15s ease, transform .15s ease; }
+.search-result-card:hover { border-color: #ff735f; transform: translateY(-2px); }
+.search-result-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.search-result-top h5 { margin: 0; color: #fff7ec; }
+.search-result-badge { font-size: .74rem; font-weight: 800; color: #ffd0c9; background: #2a1820; border: 1px solid #d94432; border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+.search-result-snippet { margin: 8px 0 6px; color: #cfd2e3; }
+
+/* ===================== Saved ===================== */
+.saved-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; background: #171b33 !important; border-color: #303658 !important; color: inherit; }
+.saved-item-link { flex: 1; min-width: 0; text-decoration: none; color: inherit; }
+.saved-item-unsave { margin: 0; flex: 0 0 auto; }
+.save-btn { display: inline-flex; align-items: center; gap: 8px; }
+
+/* ===================== Posts index (dark, matches the rest of the app) ===================== */
+.posts-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin: 26px 0 22px; }
+.posts-heading h1 { margin: 0; color: #fff7ec; font-weight: 950; }
+
+.posts-list { display: grid; gap: 12px; margin-bottom: 44px; }
+.post-row { display: flex; gap: 16px; align-items: center; background: #171b33; border: 1px solid #303658; border-radius: 14px; padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color .15s ease, transform .15s ease; }
+.post-row:hover { border-color: #ff735f; transform: translateY(-2px); color: inherit; }
+
+.post-row-thumb { flex: 0 0 64px; width: 64px; height: 64px; border-radius: 12px; overflow: hidden; background: #0f1326; display: grid; place-items: center; }
+.post-row-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.post-row-thumb .wiki-topic-placeholder { width: 100%; height: 100%; font-size: 1.6rem; }
+
+.post-row-body { flex: 1; min-width: 0; }
+.post-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.post-row-top h5 { margin: 0; color: #fff7ec; font-size: 1.05rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.post-row-date { color: #8b90ad; white-space: nowrap; }
+.post-row-desc { margin: 6px 0 8px; color: #c6c9db; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.post-row-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.post-tag { font-size: .74rem; font-weight: 800; color: #d8ceff; background: #232a4d; border: 1px solid #3a4165; border-radius: 999px; padding: 3px 10px; }
+.post-tag-public { color: #9df1c1; background: #173c36; border-color: #245a4c; }
+.post-tag-private { color: #ffd08a; background: #49361f; border-color: #6b5330; }
+
+@media (max-width: 575px) {
+  .post-row { flex-wrap: wrap; }
+  .post-row-thumb { flex: 0 0 52px; width: 52px; height: 52px; }
+  .post-row-top { flex-direction: column; align-items: flex-start; gap: 2px; }
+}
+
+/* ===================== Dark-friendly bootstrap alerts (site-wide) ===================== */
+.alert { border-radius: 12px; border: 1px solid transparent; }
+.alert-danger { background: #3a1420; color: #ffb2c2; border-color: #5a2333; }
+.alert-success { background: #123527; color: #9df1c1; border-color: #1f4f3a; }
+
+/* ===================== Settings page ===================== */
+.settings-page { max-width: 720px; }
+.settings-card { display: grid; gap: 26px; }
+.settings-block h2 { color: #fff7ec; font-size: 1.05rem; font-weight: 900; margin: 0 0 4px; }
+.settings-hint { color: #b9bfd4; font-size: .88rem; margin: 0 0 14px; }
+.lang-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.lang-option { display: flex; align-items: center; gap: 10px; background: #0f1326; border: 1px solid #3a4165; border-radius: 12px; padding: 12px 14px; cursor: pointer; color: #d8dae8; font-weight: 700; transition: border-color .15s ease, background .15s ease; }
+.lang-option input { accent-color: #ff735f; margin: 0; }
+.lang-option:hover { border-color: #6c6294; }
+.lang-option.active { border-color: #ff735f; background: #201829; color: #fff7ec; }
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.theme-option { display: flex; align-items: center; gap: 10px; background: #0f1326; border: 1px solid #3a4165; border-radius: 12px; padding: 12px 14px; cursor: pointer; color: #d8dae8; font-weight: 700; transition: border-color .15s ease, background .15s ease; }
+.theme-option input { position: absolute; opacity: 0; pointer-events: none; }
+.theme-option:hover { border-color: #6c6294; }
+.theme-option.active { border-color: #ff735f; background: #201829; color: #fff7ec; }
+.theme-swatch { width: 26px; height: 26px; border-radius: 50%; flex: 0 0 auto; border: 2px solid #0006; }
+.theme-option-dark .theme-swatch { background: linear-gradient(135deg, #12162b, #22283f); }
+.theme-option-light .theme-swatch { background: linear-gradient(135deg, #ffffff, #dfe1ee); }
+.theme-option-sunset .theme-swatch { background: linear-gradient(135deg, #ff8b4d, #7c2ae8); }
+
+/* ===================== Light theme ===================== */
+html[data-theme="light"] body { background: #f4f5fb; color: #1c1f2e; }
+html[data-theme="light"] a { color: #d9432c; }
+html[data-theme="light"] .fandom-nav { background: #ffffff; border-bottom: 1px solid #e3e5f1; }
+html[data-theme="light"] .navbar-brand { color: #1c1f2e !important; }
+html[data-theme="light"] .nav-link, html[data-theme="light"] .nav-account a { color: #4a4f68 !important; }
+html[data-theme="light"] .nav-account button { color: #4a4f68; }
+html[data-theme="light"] .fandom-search { background: #f1f2f9; border-color: #e3e5f1; }
+html[data-theme="light"] .fandom-search:focus-within { background: #ffffff; border-color: #d9432c; }
+html[data-theme="light"] .fandom-search input { color: #1c1f2e; }
+html[data-theme="light"] .fandom-search svg { color: #7a7f9a; }
+html[data-theme="light"] .fandom-sidebar { background: #ffffff; border-right: 1px solid #e3e5f1; }
+html[data-theme="light"] .fandom-sidebar a { color: #6a6f8a; }
+html[data-theme="light"] .fandom-sidebar a:hover { background: #f1f2f9; color: #1c1f2e; }
+html[data-theme="light"] .fandom-sidebar a.active { background: #ffe3dc; color: #d9432c; }
+html[data-theme="light"] .fandom-sidebar a.active svg { color: #d9432c; }
+html[data-theme="light"] .wiki-hero h1, html[data-theme="light"] .wiki-kicker + h1,
+html[data-theme="light"] .structure-heading h1, html[data-theme="light"] .editor-heading h1,
+html[data-theme="light"] .posts-heading h1, html[data-theme="light"] .search-heading h1,
+html[data-theme="light"] .home-section-heading h2, html[data-theme="light"] .tool-card h2,
+html[data-theme="light"] .settings-block h2, html[data-theme="light"] .media-uploader h2 { color: #1c1f2e; text-shadow: none; }
+html[data-theme="light"] .wiki-hero p, html[data-theme="light"] .wiki-copy,
+html[data-theme="light"] .structure-heading p, html[data-theme="light"] .editor-heading p,
+html[data-theme="light"] .settings-hint, html[data-theme="light"] .media-uploader p { color: #4a4f68; }
+html[data-theme="light"] .editor-card, html[data-theme="light"] .account-card,
+html[data-theme="light"] .profile-card, html[data-theme="light"] .structure-block,
+html[data-theme="light"] .tool-card, html[data-theme="light"] .empty-structure,
+html[data-theme="light"] .post-row, html[data-theme="light"] .home-jump-card,
+html[data-theme="light"] .home-category-card, html[data-theme="light"] .search-result-card,
+html[data-theme="light"] .saved-item, html[data-theme="light"] .wiki-image-block,
+html[data-theme="light"] .media-uploader, html[data-theme="light"] .lang-option,
+html[data-theme="light"] .theme-option, html[data-theme="light"] .image-preview-grid figure,
+html[data-theme="light"] .existing-media-strip figure { background: #ffffff; border-color: #e3e5f1; color: #1c1f2e; }
+html[data-theme="light"] .lang-option, html[data-theme="light"] .theme-option { background: #f7f8fc; }
+html[data-theme="light"] .lang-option.active, html[data-theme="light"] .theme-option.active { background: #ffe3dc; border-color: #d9432c; color: #1c1f2e; }
+html[data-theme="light"] .editor-card input, html[data-theme="light"] .editor-card textarea,
+html[data-theme="light"] .editor-card select, html[data-theme="light"] .account-card input,
+html[data-theme="light"] .profile-card input, html[data-theme="light"] .structure-edit-form textarea,
+html[data-theme="light"] .structure-edit-form input, html[data-theme="light"] .tool-card textarea,
+html[data-theme="light"] .tool-card input, html[data-theme="light"] .tool-card select { background: #f4f5fb; color: #1c1f2e; border-color: #d7d9ea; }
+html[data-theme="light"] .post-row-thumb, html[data-theme="light"] .home-jump-thumb,
+html[data-theme="light"] .home-category-cover, html[data-theme="light"] .wiki-topic-card .wiki-topic-art { background: #f1f2f9; }
+html[data-theme="light"] .wiki-topic-placeholder { background: linear-gradient(135deg, #ff9a7a, #d9432c); color: #ffffff; }
+html[data-theme="light"] .home-recent-avatar { background: linear-gradient(135deg, #ff9a7a, #d9432c); border-color: #e3e5f1; }
+html[data-theme="light"] .fandom-toolbelt { background: linear-gradient(135deg, #fff0ea, #f4f5fb); border-color: #e3e5f1; }
+html[data-theme="light"] .fandom-toolbelt strong, html[data-theme="light"] .home-recent-title { color: #1c1f2e; }
+html[data-theme="light"] .search-result-top h5, html[data-theme="light"] .post-row-top h5 { color: #1c1f2e; }
+html[data-theme="light"] .wiki-back { color: #6a6f8a; }
+html[data-theme="light"] .wiki-back a { color: #d9432c; }
+
+/* ===================== Sunset theme ===================== */
+html[data-theme="sunset"] .wiki-hero { background: radial-gradient(ellipse at top, #3a1f4d55, transparent 70%); border-radius: 24px; }
+html[data-theme="sunset"] .wiki-kicker, html[data-theme="sunset"] a,
+html[data-theme="sunset"] .wiki-topic-card, html[data-theme="sunset"] .home-view-all,
+html[data-theme="sunset"] .toolbelt-pills span, html[data-theme="sunset"] .template-chip { color: #ffb454; }
+html[data-theme="sunset"] .nav-join { background: linear-gradient(135deg, #ff8b4d, #7c2ae8); }
+html[data-theme="sunset"] .fandom-sidebar a.active { background: #3a1f4d; color: #ffb454; }
+html[data-theme="sunset"] .fandom-sidebar a.active svg { color: #ff8b4d; }
+html[data-theme="sunset"] .wiki-topic-card .wiki-topic-art { border-color: #ff8b4d; background: #2a1a3d; }
+html[data-theme="sunset"] .wiki-topic-placeholder { background: linear-gradient(135deg, #ff8b4d, #7c2ae8); color: #1a1025; }
+html[data-theme="sunset"] .home-recent-avatar { background: linear-gradient(135deg, #ff8b4d, #7c2ae8); border-color: #3a1f4d; }
+html[data-theme="sunset"] .wiki-topic-card:hover .wiki-topic-art { border-color: #ffb454; box-shadow: 0 0 0 4px #ff8b4d33, 0 12px 28px #0006; }
+html[data-theme="sunset"] .btn-primary { background-color: #d9432c; border-color: #d9432c; }
+html[data-theme="sunset"] .search-result-badge, html[data-theme="sunset"] .post-tag-public { border-color: #ff8b4d; }
+html[data-theme="sunset"] .lang-option.active, html[data-theme="sunset"] .theme-option.active { border-color: #ff8b4d; background: #2a1a3d; }
+html[data-theme="sunset"] .lang-option input, html[data-theme="sunset"] .theme-swatch { accent-color: #ff8b4d; }
+
+/* ===================== External OAuth ===================== */
+.notice.error { background:#4a2532; color:#ffb2c2; }
+.external-auth { display:grid; gap:10px; margin-top:22px; }
+.external-auth p { color:#c8cbe0; font-size:.9rem; margin:0; text-align:center; }
+.external-auth form { margin:0; }
+.oauth-btn { width:100%; border:1px solid #3a4165; border-radius:9px; padding:11px 12px; background:#fff; color:#1f2437; font-weight:800; cursor:pointer; }
+.oauth-btn.facebook { background:#1877f2; border-color:#1877f2; color:#fff; }
+.divider { display:flex; align-items:center; gap:12px; color:#8d93ad; font-size:.82rem; margin:22px 0 -4px; text-transform:uppercase; }
+.divider::before,.divider::after { content:""; height:1px; flex:1; background:#303658; }
+html[data-theme="light"] .external-auth p { color:#4a4f68; }
+html[data-theme="light"] .divider { color:#7a7f9a; }
+html[data-theme="light"] .divider::before,
+html[data-theme="light"] .divider::after { background:#e3e5f1; }

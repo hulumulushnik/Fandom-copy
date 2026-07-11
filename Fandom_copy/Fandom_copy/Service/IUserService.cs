@@ -8,6 +8,7 @@ namespace Fandom_copy.Services
     {
         Task<ServiceResult<User>> RegisterAsync(RegisterRequestDto dto);
         Task<ServiceResult<User>> LoginAsync(LoginRequestDto dto);
+        Task<ServiceResult<User>> ExternalLoginAsync(string email, string? displayName);
 
         Task<ServiceResult> ConfirmEmailAsync(Guid userId, string token);
         Task<ServiceResult> ResendEmailConfirmationAsync(ResendConfirmationRequestDto dto);

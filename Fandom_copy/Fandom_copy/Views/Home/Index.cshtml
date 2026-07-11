@@ -1,8 +1,105 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@using Fandom_copy.DTOs.Home
+@model HomeViewModel
+@{
+    ViewData["Title"] = "Головна";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="home-section">
+    <div class="home-section-heading">
+        <h2>@(Model.JumpBackInIsSaved ? "Продовжити перегляд" : "Останні оновлення")</h2>
+        @if (Model.JumpBackInIsSaved)
+        {
+            <a asp-controller="Posts" asp-action="Saved" class="home-view-all">Усе збережене</a>
+        }
+        else
+        {
+            <a asp-controller="Posts" asp-action="Index" class="home-view-all">Усі пости</a>
+        }
+    </div>
+
+    @if (!Model.JumpBackIn.Any())
+    {
+        <p class="text-muted">Постів ще немає. <a asp-controller="Posts" asp-action="Create">Створіть перший пост →</a></p>
+    }
+    else
+    {
+        <div class="home-jump-grid">
+            @foreach (var c in Model.JumpBackIn)
+            {
+                <a class="home-jump-card" asp-controller="Posts" asp-action="Details" asp-route-id="@c.Id">
+                    <div class="home-jump-thumb">
+                        @if (!string.IsNullOrWhiteSpace(c.CoverImagePath))
+                        {
+                            <img src="@Url.Content(c.CoverImagePath)" alt="@c.Title" />
+                        }
+                        else
+                        {
+                            <span class="wiki-topic-placeholder">@c.Title.Substring(0, 1).ToUpper()</span>
+                        }
+                    </div>
+                    <div class="home-jump-info">
+                        <strong>@c.Title</strong>
+                        <small>@(c.CategoryName ?? "—")</small>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</section>
+
+@if (Model.RecentPosts.Any())
+{
+    <section class="home-section">
+        <div class="home-section-heading">
+            <h2>Останні пости</h2>
+        </div>
+        <div class="home-recent-row">
+            @foreach (var c in Model.RecentPosts)
+            {
+                <a class="home-recent-circle" asp-controller="Posts" asp-action="Details" asp-route-id="@c.Id" title="@c.Title">
+                    <span class="home-recent-avatar">
+                        @if (!string.IsNullOrWhiteSpace(c.CoverImagePath))
+                        {
+                            <img src="@Url.Content(c.CoverImagePath)" alt="@c.Title" />
+                        }
+                        else
+                        {
+                            @c.Title.Substring(0, 1).ToUpper()
+                        }
+                    </span>
+                    <span class="home-recent-title">@c.Title</span>
+                </a>
+            }
+        </div>
+    </section>
+}
+
+@if (Model.Categories.Any())
+{
+    <section class="home-section">
+        <div class="home-section-heading">
+            <h2>Категорії, які варто відкрити</h2>
+        </div>
+        <div class="home-category-grid">
+            @foreach (var cat in Model.Categories)
+            {
+                <a class="home-category-card" asp-controller="Posts" asp-action="Index">
+                    <div class="home-category-cover">
+                        @if (!string.IsNullOrWhiteSpace(cat.CoverImagePath))
+                        {
+                            <img src="@Url.Content(cat.CoverImagePath)" alt="@cat.Name" />
+                        }
+                        else
+                        {
+                            <span class="wiki-topic-placeholder">@cat.Name.Substring(0, 1).ToUpper()</span>
+                        }
+                    </div>
+                    <div class="home-category-info">
+                        <strong>@cat.Name</strong>
+                        <small>@cat.PostCount пост(ів)</small>
+                    </div>
+                </a>
+            }
+        </div>
+    </section>
+}

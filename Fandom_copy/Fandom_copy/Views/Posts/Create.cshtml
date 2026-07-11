@@ -4,41 +4,72 @@
     ViewData["Title"] = "Створити пост";
 }
 
-<h1>Створити пост</h1>
-
-<form asp-action="Create" method="post">
-    @Html.AntiForgeryToken()
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-    <div class="mb-3">
-        <label asp-for="Title" class="form-label"></label>
-        <input asp-for="Title" class="form-control" />
-        <span asp-validation-for="Title" class="text-danger"></span>
+<section class="editor-page">
+    <div class="editor-heading">
+        <p class="wiki-kicker">Новая Fandom-страница</p>
+        <h1>Створити пост</h1>
+        <p>Заполните основу страницы и сразу прикрепите изображения — они появятся в структуре поста как фото-блоки.</p>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Description" class="form-label"></label>
-        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
+    <form asp-action="Create" method="post" enctype="multipart/form-data" class="editor-card">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-    <div class="mb-3">
-        <label asp-for="CategoryId" class="form-label">Категорія</label>
-        <select asp-for="CategoryId" class="form-select"
-                asp-items="@(ViewBag.Categories as Microsoft.AspNetCore.Mvc.Rendering.SelectList)">
-            <option value="">— оберіть —</option>
-        </select>
-        <span asp-validation-for="CategoryId" class="text-danger"></span>
-    </div>
+        <div class="editor-two-columns">
+            <div class="editor-main-column">
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label">Название страницы</label>
+                    <input asp-for="Title" class="form-control" placeholder="Например: Rust Wiki" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
 
-    <div class="form-check mb-3">
-        <input asp-for="IsPublic" class="form-check-input" />
-        <label asp-for="IsPublic" class="form-check-label">Публічний</label>
-    </div>
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label">Вступительный текст</label>
+                    <textarea asp-for="Description" class="form-control" rows="7" placeholder="Краткое описание мира, темы, персонажа или гайда..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
 
-    <button type="submit" class="btn btn-primary">Створити</button>
-    <a asp-action="Index" class="btn btn-outline-secondary">Скасувати</a>
-</form>
+                <div class="mb-3">
+                    <label asp-for="CategoryId" class="form-label">Категорія</label>
+                    <select asp-for="CategoryId" class="form-select"
+                            asp-items="@(ViewBag.Categories as Microsoft.AspNetCore.Mvc.Rendering.SelectList)">
+                        <option value="">— оберіть —</option>
+                    </select>
+                    <span asp-validation-for="CategoryId" class="text-danger"></span>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="IsPublic" class="form-check-input" />
+                    <label asp-for="IsPublic" class="form-check-label">Публічний</label>
+                </div>
+            </div>
+
+            <aside class="editor-side-column">
+                <div class="media-uploader">
+                    <h2>Іконка поста</h2>
+                    <p>Значок картки поста в списках і на головній. Не потрапляє у текст статті — це окреме зображення.</p>
+                    <input type="file" name="iconFile" accept="image/png,image/jpeg,image/gif,image/webp" class="form-control js-image-input" data-preview="#createIconPreview" />
+                    <small class="text-muted">JPG, PNG, GIF або WEBP до 5 МБ. Якщо не вибрати — буде літера-заглушка.</small>
+                    <div id="createIconPreview" class="image-preview-grid"></div>
+                </div>
+
+                <div class="media-uploader mt-3">
+                    <h2>Изображения поста</h2>
+                    <p>Можно выбрать сразу несколько фото. Они будут вставлены в корень страницы после вступительного текста.</p>
+                    <input type="file" name="imageFiles" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="form-control js-image-input" data-preview="#createImagePreview" />
+                    <input type="text" name="imageCaption" maxlength="240" class="form-control mt-2" placeholder="Общая подпись к выбранным фото" />
+                    <small class="text-muted">JPG, PNG, GIF или WEBP до 5 МБ на файл.</small>
+                    <div id="createImagePreview" class="image-preview-grid"></div>
+                </div>
+            </aside>
+        </div>
+
+        <div class="editor-actions">
+            <button type="submit" class="btn btn-primary">Створити</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Скасувати</a>
+        </div>
+    </form>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -14,7 +14,9 @@ namespace Fandom_copy.Data
         public DbSet<User> Users => Set<User>();
         public DbSet<Post> Posts => Set<Post>();
         public DbSet<PostSection> PostSections => Set<PostSection>();
+        public DbSet<PostContentBlock> PostContentBlocks => Set<PostContentBlock>();
         public DbSet<PostMember> PostMembers => Set<PostMember>();
+        public DbSet<SavedPost> SavedPosts => Set<SavedPost>();
         public DbSet<PostHistory> PostHistories => Set<PostHistory>();
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<Tag> Tags => Set<Tag>();
@@ -42,6 +44,15 @@ namespace Fandom_copy.Data
                 .HasForeignKey(s => s.ParentSectionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<PostContentBlock>()
+                .HasOne(b => b.Section)
+                .WithMany()
+                .HasForeignKey(b => b.SectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PostContentBlock>()
+                .HasIndex(b => new { b.PostId, b.ContainerSectionId, b.Order });
+
             modelBuilder.Entity<PostMember>()
                 .HasOne(pm => pm.User)
                 .WithMany()
@@ -53,6 +64,21 @@ namespace Fandom_copy.Data
                 .WithMany()
                 .HasForeignKey(h => h.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SavedPost>(entity =>
+            {
+                entity.HasIndex(s => new { s.UserId, s.PostId }).IsUnique();
+
+                entity.HasOne(s => s.User)
+                    .WithMany()
+                    .HasForeignKey(s => s.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(s => s.Post)
+                    .WithMany()
+                    .HasForeignKey(s => s.PostId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
         }
     }
 }

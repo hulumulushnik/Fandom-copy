@@ -1,0 +1,45 @@
+@using Fandom_copy.DTOs.Posts
+@model List<PostDto>
+@{
+    ViewData["Title"] = "Збережено";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <p class="wiki-kicker">Ваша бібліотека</p>
+        <h1 class="mb-0">Збережено</h1>
+    </div>
+    <a asp-controller="Posts" asp-action="Index" class="btn btn-outline-secondary">Усі пости</a>
+</div>
+
+@if (TempData["Error"] is string err) { <div class="alert alert-danger">@err</div> }
+@if (TempData["Message"] is string msg) { <div class="alert alert-success">@msg</div> }
+
+@if (!Model.Any())
+{
+    <p class="text-muted">Ви ще нічого не зберегли. Натисніть «Зберегти» на сторінці поста, щоб додати його сюди.</p>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var p in Model)
+        {
+            <div class="list-group-item saved-item">
+                <a asp-controller="Posts" asp-action="Details" asp-route-id="@p.Id" class="saved-item-link">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">@p.Title</h5>
+                        <small class="text-muted">@p.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                    </div>
+                    <p class="mb-1">@p.Description</p>
+                    <small class="text-muted">
+                        Категорія: @(p.CategoryName ?? "—")
+                        @(p.IsPublic ? "· Публічний" : "· Приватний")
+                    </small>
+                </a>
+                <form asp-controller="Posts" asp-action="ToggleSave" asp-route-id="@p.Id" method="post" class="saved-item-unsave">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Прибрати</button>
+                </form>
+            </div>
+        }
+    </div>
+}

@@ -1,79 +1,134 @@
 @using Fandom_copy.DTOs.Posts
+@using Fandom_copy.Models
 @model PostDto
 @{
     ViewData["Title"] = Model.Title;
+    var sectionLookup = Model.Sections.ToDictionary(s => s.Id);
 }
 
-<nav class="mb-3">
-    <a asp-controller="Posts" asp-action="Index">← До списку</a>
-</nav>
+<nav class="wiki-back"><a asp-controller="Posts" asp-action="Index">← К публикациям</a></nav>
 
-@if (TempData["Error"] is string err)
-{
-    <div class="alert alert-danger">@err</div>
-}
-@if (TempData["Message"] is string msg)
-{
-    <div class="alert alert-success">@msg</div>
-}
+@if (TempData["Error"] is string err) { <div class="alert alert-danger">@err</div> }
+@if (TempData["Message"] is string msg) { <div class="alert alert-success">@msg</div> }
 
-<div class="d-flex justify-content-between align-items-center">
-    <div>
-        <h1>@Model.Title</h1>
-        <p class="text-muted">
-            Категорія: @(Model.CategoryName ?? "—")
-            · @(Model.IsPublic ? "Публічний" : "Приватний")
-            · Створено: @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")
-            · Оновлено: @Model.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
-            @if (Model.CurrentUserRole is not null)
-            {
-                <span>· Ваша роль: <strong>@Model.CurrentUserRole</strong></span>
-            }
-        </p>
-    </div>
-    @if (User?.Identity?.IsAuthenticated == true && Model.CanEdit)
+<section class="wiki-hero">
+    <div class="wiki-kicker">@(Model.CategoryName ?? "Fandom page") · @(Model.IsPublic ? "Публичная" : "Приватная")</div>
+    <h1>Welcome to the <em>@Model.Title</em> Wiki!</h1>
+    @if (!string.IsNullOrWhiteSpace(Model.Description))
     {
-        <div class="btn-group">
-            <a asp-controller="Posts" asp-action="Edit" asp-route-id="@Model.Id"
-               class="btn btn-outline-secondary">Редагувати пост</a>
-            <a asp-controller="PostSections" asp-action="Create" asp-route-postId="@Model.Id"
-               class="btn btn-primary">+ Підпост</a>
-            @if (Model.CanManageMembers)
-            {
-                <a asp-controller="Posts" asp-action="Members" asp-route-id="@Model.Id"
-                   class="btn btn-outline-info">Учасники</a>
-                <form asp-controller="Posts" asp-action="Delete" asp-route-id="@Model.Id"
-                      method="post" class="d-inline"
-                      onsubmit="return confirm('Видалити пост?');">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-outline-danger">Видалити пост</button>
-                </form>
-            }
-        </div>
+        <p>@Model.Description</p>
     }
-</div>
+    <div class="wiki-actions">
+        @if (User?.Identity?.IsAuthenticated == true)
+        {
+            <form asp-controller="Posts" asp-action="ToggleSave" asp-route-id="@Model.Id" method="post">
+                @{ bool isSaved = ViewBag.IsSaved is true; }
+                <button type="submit" class="btn @(isSaved ? "btn-outline-warning" : "btn-outline-secondary") save-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="@(isSaved ? "currentColor" : "none")" stroke="currentColor" stroke-width="2"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" /></svg>
+                    @(isSaved ? "Збережено" : "Зберегти")
+                </button>
+            </form>
+        }
+        @if (User?.Identity?.IsAuthenticated == true && Model.CanEdit)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Редактировать</a>
+            <a asp-controller="PostContent" asp-action="Index" asp-route-postId="@Model.Id" class="btn btn-outline-primary">Структура</a>
+            <a asp-controller="PostSections" asp-action="Create" asp-route-postId="@Model.Id" class="btn btn-primary">+ Под-пост</a>
+        }
+    </div>
+</section>
 
-<hr />
-<div class="mb-4" style="white-space:pre-wrap;">@Model.Description</div>
-
-<h3>Підпости</h3>
-@if (!Model.Sections.Any())
+@if (Model.ContentBlocks.Any())
 {
-    <p class="text-muted">Підпостів ще немає.</p>
+    var orderedBlocks = Model.ContentBlocks.OrderBy(b => b.Order).ToList();
+    <article class="wiki-content">
+        @{
+            var blockIndex = 0;
+            while (blockIndex < orderedBlocks.Count)
+            {
+                var block = orderedBlocks[blockIndex];
+                if (block.Type == PostContentBlockType.Text)
+                {
+                    <div class="wiki-copy">@block.Text</div>
+                    blockIndex++;
+                }
+                else if (block.Type == PostContentBlockType.Image && !string.IsNullOrWhiteSpace(block.ImagePath))
+                {
+                    <figure class="wiki-image-block">
+                        <img src="@Url.Content(block.ImagePath)" alt="@(string.IsNullOrWhiteSpace(block.ImageCaption) ? Model.Title : block.ImageCaption)" />
+                        @if (!string.IsNullOrWhiteSpace(block.ImageCaption))
+                        {
+                            <figcaption>@block.ImageCaption</figcaption>
+                        }
+                    </figure>
+                    blockIndex++;
+                }
+                else if (block.SectionId is Guid)
+                {
+                    <div class="wiki-topic-grid">
+                        @while (blockIndex < orderedBlocks.Count
+                            && orderedBlocks[blockIndex].Type != PostContentBlockType.Text
+                            && !(orderedBlocks[blockIndex].Type == PostContentBlockType.Image && !string.IsNullOrWhiteSpace(orderedBlocks[blockIndex].ImagePath))
+                            && orderedBlocks[blockIndex].SectionId is Guid)
+                        {
+                            var topicBlock = orderedBlocks[blockIndex];
+                            var topicSectionId = topicBlock.SectionId!.Value;
+                            var section = sectionLookup.GetValueOrDefault(topicSectionId);
+                            <a class="wiki-topic-card" asp-controller="PostSections" asp-action="Details" asp-route-postId="@Model.Id" asp-route-id="@topicSectionId">
+                                <span class="wiki-topic-art">
+                                    @if (!string.IsNullOrWhiteSpace(section?.IconPath ?? section?.PrimaryImagePath))
+                                    {
+                                        <img src="@Url.Content(section.IconPath ?? section.PrimaryImagePath)" alt="@topicBlock.SectionTitle" />
+                                    }
+                                    else
+                                    {
+                                        <span class="wiki-topic-placeholder">!</span>
+                                    }
+                                </span>
+                                <strong>@(topicBlock.SectionTitle ?? "Под-пост")</strong>
+                                <small>Открыть под-пост →</small>
+                            </a>
+                            blockIndex++;
+                        }
+                    </div>
+                }
+                else
+                {
+                    blockIndex++;
+                }
+            }
+        }
+    </article>
 }
 else
 {
-    <div class="list-group mb-3">
-        @foreach (var s in Model.Sections.OrderBy(x => x.Order))
+    <article class="wiki-content">
+        <div class="wiki-copy">@Model.Description</div>
+        @if (!Model.Sections.Any())
         {
-            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-               asp-controller="PostSections" asp-action="Details"
-               asp-route-postId="@Model.Id" asp-route-id="@s.Id">
-                <span>
-                    <strong>@s.Title</strong>
-                </span>
-                <small class="text-muted">#@s.Order</small>
-            </a>
+            <p class="text-muted">Под-постов пока нет.</p>
         }
-    </div>
+        else
+        {
+            <div class="wiki-topic-grid">
+                @foreach (var s in Model.Sections.OrderBy(x => x.Order))
+                {
+                    <a class="wiki-topic-card" asp-controller="PostSections" asp-action="Details" asp-route-postId="@Model.Id" asp-route-id="@s.Id">
+                        <span class="wiki-topic-art">
+                            @if (!string.IsNullOrWhiteSpace(s.IconPath ?? s.PrimaryImagePath))
+                            {
+                                <img src="@Url.Content(s.IconPath ?? s.PrimaryImagePath)" alt="@s.Title" />
+                            }
+                            else
+                            {
+                                <span class="wiki-topic-placeholder">!</span>
+                            }
+                        </span>
+                        <strong>@s.Title</strong>
+                        <small>Открыть →</small>
+                    </a>
+                }
+            </div>
+        }
+    </article>
 }

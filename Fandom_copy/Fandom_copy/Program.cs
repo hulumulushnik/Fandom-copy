@@ -1,6 +1,7 @@
 using Fandom_copy.Data;
 using Fandom_copy.Services;
 using Fandom_copy.Services.Email;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,7 +16,7 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("App"));
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+var authenticationBuilder = builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Account/Login";
@@ -24,13 +25,49 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.ExpireTimeSpan = TimeSpan.FromDays(1);
         options.SlidingExpiration = true;
+    })
+    .AddCookie("ExternalOAuth", options =>
+    {
+        options.Cookie.Name = "Fandom.ExternalOAuth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
     });
+
+if (IsOAuthProviderConfigured("Google"))
+{
+    var google = builder.Configuration.GetSection("Authentication:Google");
+    authenticationBuilder.AddGoogle("Google", options =>
+    {
+        options.ClientId = google["ClientId"]!;
+        options.ClientSecret = google["ClientSecret"]!;
+        options.CallbackPath = "/signin-google";
+        options.SignInScheme = "ExternalOAuth";
+        options.SaveTokens = false;
+    });
+}
+
+if (IsOAuthProviderConfigured("Facebook"))
+{
+    var facebook = builder.Configuration.GetSection("Authentication:Facebook");
+    authenticationBuilder.AddFacebook("Facebook", options =>
+    {
+        options.ClientId = facebook["AppId"]!;
+        options.ClientSecret = facebook["AppSecret"]!;
+        options.CallbackPath = "/signin-facebook";
+        options.SignInScheme = "ExternalOAuth";
+        options.Scope.Add("email");
+        options.Fields.Add("email");
+        options.SaveTokens = false;
+    });
+}
 
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<IPostSectionService, PostSectionService>();
+builder.Services.AddScoped<IPostImageStorage, PostImageStorage>();
 
 var app = builder.Build();
 
@@ -40,6 +77,61 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.EnsureCreated();
+    // EnsureCreated does not extend an already existing database when a new
+    // entity is added. This small, idempotent upgrade keeps local projects
+    // usable until the application is moved to EF migrations.
+    db.Database.ExecuteSqlRaw("""
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NULL
+        BEGIN
+            CREATE TABLE [dbo].[PostContentBlocks] (
+                [Id] uniqueidentifier NOT NULL PRIMARY KEY,
+                [PostId] uniqueidentifier NOT NULL,
+                [ContainerSectionId] uniqueidentifier NULL,
+                [Type] int NOT NULL,
+                [Text] nvarchar(max) NOT NULL,
+                [ImagePath] nvarchar(max) NOT NULL DEFAULT N'',
+                [ImageCaption] nvarchar(max) NOT NULL DEFAULT N'',
+                [SectionId] uniqueidentifier NULL,
+                [Order] int NOT NULL
+            );
+            CREATE INDEX [IX_PostContentBlocks_PostId_ContainerSectionId_Order]
+                ON [dbo].[PostContentBlocks] ([PostId], [ContainerSectionId], [Order]);
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'ImagePath') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [ImagePath] nvarchar(max) NOT NULL CONSTRAINT [DF_PostContentBlocks_ImagePath] DEFAULT N'';
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'ImageCaption') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [ImageCaption] nvarchar(max) NOT NULL CONSTRAINT [DF_PostContentBlocks_ImageCaption] DEFAULT N'';
+        END
+        IF OBJECT_ID(N'[dbo].[Posts]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[Posts]', N'IconPath') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[Posts]
+                ADD [IconPath] nvarchar(max) NULL;
+        END
+        IF OBJECT_ID(N'[dbo].[PostSections]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostSections]', N'IconPath') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostSections]
+                ADD [IconPath] nvarchar(max) NULL;
+        END
+        IF OBJECT_ID(N'[dbo].[SavedPosts]', N'U') IS NULL
+        BEGIN
+            CREATE TABLE [dbo].[SavedPosts] (
+                [Id] uniqueidentifier NOT NULL PRIMARY KEY,
+                [UserId] uniqueidentifier NOT NULL,
+                [PostId] uniqueidentifier NOT NULL,
+                [SavedAt] datetime2 NOT NULL DEFAULT (SYSUTCDATETIME())
+            );
+            CREATE UNIQUE INDEX [IX_SavedPosts_UserId_PostId] ON [dbo].[SavedPosts] ([UserId], [PostId]);
+        END
+        """);
     if (!db.Categories.Any())
     {
         db.Categories.Add(new Fandom_copy.Models.Category
@@ -73,3 +165,12 @@ app.MapControllerRoute(
 app.MapControllers();
 
 app.Run();
+
+bool IsOAuthProviderConfigured(string provider)
+{
+    var section = builder.Configuration.GetSection($"Authentication:{provider}");
+    var clientId = provider == "Facebook" ? section["AppId"] : section["ClientId"];
+    var clientSecret = provider == "Facebook" ? section["AppSecret"] : section["ClientSecret"];
+
+    return !string.IsNullOrWhiteSpace(clientId) && !string.IsNullOrWhiteSpace(clientSecret);
+}

@@ -6,60 +6,89 @@
     var parentTitle = ViewBag.ParentSectionTitle as string;
 }
 
-<h1>Створити підпост</h1>
+<section class="editor-page">
+    <div class="editor-heading">
+        <p class="wiki-kicker">Новый раздел страницы</p>
+        <h1>Створити підпост</h1>
+        <p>Подпост станет отдельной Fandom-страницей и карточкой в структуре родителя.</p>
+    </div>
 
-<form asp-action="Create" asp-route-postId="@postId" method="post">
-    @Html.AntiForgeryToken()
+    <form asp-action="Create" asp-route-postId="@postId" method="post" enctype="multipart/form-data" class="editor-card">
+        @Html.AntiForgeryToken()
 
-    @* PostId, ParentSectionId — обов'язково hidden, щоб при повторному submit
-       (після помилки валідації) значення не гублися. *@
-    <input type="hidden" asp-for="PostId" />
-    <input type="hidden" asp-for="ParentSectionId" />
+        <input type="hidden" asp-for="PostId" />
+        <input type="hidden" asp-for="ParentSectionId" />
 
-    <div asp-validation-summary="All" class="text-danger"></div>
+        <div asp-validation-summary="All" class="text-danger"></div>
 
-    @if (Model.ParentSectionId is not null && Model.ParentSectionId != Guid.Empty)
-    {
-        <div class="alert alert-info">
-            Створюється як вкладений підпост
-            @if (!string.IsNullOrEmpty(parentTitle))
+        @if (Model.ParentSectionId is not null && Model.ParentSectionId != Guid.Empty)
+        {
+            <div class="alert alert-info">
+                Створюється як вкладений підпост
+                @if (!string.IsNullOrEmpty(parentTitle))
+                {
+                    <span>у <strong>@parentTitle</strong></span>
+                }
+            </div>
+        }
+
+        <div class="editor-two-columns">
+            <div class="editor-main-column">
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label">Заголовок</label>
+                    <input asp-for="Title" class="form-control" placeholder="Например: Weapons, Characters, Locations" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Text" class="form-label">Первый текстовый блок</label>
+                    <textarea asp-for="Text" class="form-control" rows="12" placeholder="Основной текст подпоста..."></textarea>
+                    <span asp-validation-for="Text" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Order" class="form-label">Порядок</label>
+                    <input asp-for="Order" type="number" class="form-control" />
+                    <span asp-validation-for="Order" class="text-danger"></span>
+                </div>
+            </div>
+
+            <aside class="editor-side-column">
+                <div class="media-uploader">
+                    <h2>Іконка підпоста</h2>
+                    <p>Значок картки цього підпоста в структурі. Не потрапляє у текст — окреме зображення.</p>
+                    <input type="file" name="iconFile" accept="image/png,image/jpeg,image/gif,image/webp" class="form-control js-image-input" data-preview="#sectionCreateIconPreview" />
+                    <small class="text-muted">Якщо не вибрати — буде використано перше фото з тексту, або заглушка.</small>
+                    <div id="sectionCreateIconPreview" class="image-preview-grid"></div>
+                </div>
+
+                <div class="media-uploader mt-3">
+                    <h2>Фото подпоста</h2>
+                    <p>Выбранные изображения будут добавлены в структуру этого подпоста сразу после первого текста.</p>
+                    <input type="file" name="imageFiles" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="form-control js-image-input" data-preview="#sectionCreateImagePreview" />
+                    <input type="text" name="imageCaption" maxlength="240" class="form-control mt-2" placeholder="Общая подпись к фото" />
+                    <small class="text-muted">Якщо вище задано іконку, вона матиме пріоритет над мініатюрою.</small>
+                    <div id="sectionCreateImagePreview" class="image-preview-grid"></div>
+                </div>
+            </aside>
+        </div>
+
+        <div class="editor-actions">
+            <button type="submit" class="btn btn-primary">Створити</button>
+            @if (Model.ParentSectionId is not null && Model.ParentSectionId != Guid.Empty)
             {
-                <span>у <strong>@parentTitle</strong></span>
+                <a asp-controller="PostSections" asp-action="Details"
+                   asp-route-postId="@postId" asp-route-id="@Model.ParentSectionId"
+                   class="btn btn-outline-secondary">Скасувати</a>
+            }
+            else
+            {
+                <a asp-controller="Posts" asp-action="Details" asp-route-id="@postId"
+                   class="btn btn-outline-secondary">Скасувати</a>
             }
         </div>
-    }
-
-    <div class="mb-3">
-        <label asp-for="Title" class="form-label">Заголовок</label>
-        <input asp-for="Title" class="form-control" />
-        <span asp-validation-for="Title" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Text" class="form-label">Текст</label>
-        <textarea asp-for="Text" class="form-control" rows="12"></textarea>
-        <span asp-validation-for="Text" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Order" class="form-label">Порядок</label>
-        <input asp-for="Order" type="number" class="form-control" />
-        <span asp-validation-for="Order" class="text-danger"></span>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Створити</button>
-    @if (Model.ParentSectionId is not null && Model.ParentSectionId != Guid.Empty)
-    {
-        <a asp-controller="PostSections" asp-action="Details"
-           asp-route-postId="@postId" asp-route-id="@Model.ParentSectionId"
-           class="btn btn-outline-secondary">Скасувати</a>
-    }
-    else
-    {
-        <a asp-controller="Posts" asp-action="Details" asp-route-id="@postId"
-           class="btn btn-outline-secondary">Скасувати</a>
-    }
-</form>
+    </form>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

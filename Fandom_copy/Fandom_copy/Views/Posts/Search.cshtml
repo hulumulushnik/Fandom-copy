@@ -1,0 +1,55 @@
+@using Fandom_copy.DTOs.Posts
+@model List<PostSearchResultDto>
+@{
+    var query = (string)(ViewBag.Query ?? "");
+    ViewData["Title"] = query.Length > 0 ? $"Пошук: {query}" : "Пошук";
+}
+
+<section class="search-heading">
+    <p class="wiki-kicker">Пошук по структурі</p>
+    <h1>@(query.Length > 0 ? $"Результати для «{query}»" : "Пошук постів")</h1>
+
+    <form class="search-page-form" asp-controller="Posts" asp-action="Search" method="get">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+        <input type="search" name="q" value="@query" placeholder="Пошук постів, категорій, розділів..." autofocus />
+        <button type="submit" class="btn btn-primary">Знайти</button>
+    </form>
+</section>
+
+@if (query.Length == 0)
+{
+    <p class="text-muted">Введіть запит, щоб знайти пости за назвою, описом, категорією або текстом їхньої структури (під-постів).</p>
+}
+else if (!Model.Any())
+{
+    <p class="text-muted">Нічого не знайдено за запитом «@query».</p>
+}
+else
+{
+    <div class="search-results">
+        @foreach (var r in Model)
+        {
+            <a class="search-result-card" asp-controller="Posts" asp-action="Details" asp-route-id="@r.Id">
+                <div class="search-result-top">
+                    <h5>@r.Title</h5>
+                    <span class="search-result-badge">
+                        @(r.MatchedIn switch
+                        {
+                            "Title" => "Назва",
+                            "Description" => "Опис",
+                            "Section" => $"Розділ: {r.MatchedSectionTitle}",
+                            _ => "Збіг"
+                        })
+                    </span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(r.Snippet))
+                {
+                    <p class="search-result-snippet">@r.Snippet</p>
+                }
+                <small class="text-muted">
+                    @(r.CategoryName ?? "—") · @(r.IsPublic ? "Публічний" : "Приватний") · @r.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
+                </small>
+            </a>
+        }
+    </div>
+}
