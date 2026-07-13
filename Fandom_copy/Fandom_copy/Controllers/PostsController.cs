@@ -17,12 +17,14 @@ namespace Fandom_copy.Controllers
         private readonly IPostService _postService;
         private readonly ApplicationDbContext _db;
         private readonly IPostImageStorage _imageStorage;
+        private readonly IPostVersionService _versions;
 
-        public PostsController(IPostService postService, ApplicationDbContext db, IPostImageStorage imageStorage)
+        public PostsController(IPostService postService, ApplicationDbContext db, IPostImageStorage imageStorage, IPostVersionService versions)
         {
             _postService = postService;
             _db = db;
             _imageStorage = imageStorage;
+            _versions = versions;
         }
 
         // GET /posts?categoryId=...
@@ -59,7 +61,30 @@ namespace Fandom_copy.Controllers
             ViewBag.IsSaved = userId is not null &&
                 await _db.SavedPosts.AnyAsync(s => s.PostId == id && s.UserId == userId.Value);
 
+            if (userId is not null && result.Data!.CanManageMembers)
+            {
+                var versions = await _versions.GetVersionsAsync(id, userId.Value);
+                ViewBag.PostVersions = versions.Data ?? new List<PostVersionDto>();
+            }
+
             return View(result.Data);
+        }
+
+        // POST /posts/{id}/versions/{versionId}/restore
+        [HttpPost("{id:guid}/versions/{versionId:guid}/restore")]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RestoreVersion(Guid id, Guid versionId)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _versions.RestoreAsync(id, versionId, userId);
+
+            if (!result.Success)
+                TempData["Error"] = result.Error;
+            else
+                TempData["Message"] = "Пост відновлено до вибраної версії";
+
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         // GET /posts/search?q=...
@@ -529,9 +554,6 @@ namespace Fandom_copy.Controllers
 
             if (removeIcon)
             {
-                if (!string.IsNullOrWhiteSpace(post.IconPath))
-                    _imageStorage.Delete(post.IconPath);
-
                 post.IconPath = null;
                 post.UpdatedAt = DateTime.UtcNow;
                 await _db.SaveChangesAsync();
@@ -541,9 +563,6 @@ namespace Fandom_copy.Controllers
             var saved = await _imageStorage.SaveAsync(postId, iconFile);
             if (!saved.Success)
                 return ServiceResult.Fail(saved.Error ?? "Не вдалося завантажити іконку");
-
-            if (!string.IsNullOrWhiteSpace(post.IconPath))
-                _imageStorage.Delete(post.IconPath);
 
             post.IconPath = saved.RelativePath;
             post.UpdatedAt = DateTime.UtcNow;

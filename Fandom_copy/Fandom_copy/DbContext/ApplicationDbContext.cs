@@ -18,6 +18,7 @@ namespace Fandom_copy.Data
         public DbSet<PostMember> PostMembers => Set<PostMember>();
         public DbSet<SavedPost> SavedPosts => Set<SavedPost>();
         public DbSet<PostHistory> PostHistories => Set<PostHistory>();
+        public DbSet<PostVersion> PostVersions => Set<PostVersion>();
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<Tag> Tags => Set<Tag>();
         public DbSet<Images> Images => Set<Images>();
@@ -93,6 +94,21 @@ namespace Fandom_copy.Data
                 .WithMany()
                 .HasForeignKey(h => h.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PostVersion>(entity =>
+            {
+                entity.HasIndex(v => new { v.PostId, v.CreatedAt });
+
+                entity.HasOne(v => v.Post)
+                    .WithMany()
+                    .HasForeignKey(v => v.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(v => v.User)
+                    .WithMany()
+                    .HasForeignKey(v => v.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
 
             modelBuilder.Entity<SavedPost>(entity =>
             {

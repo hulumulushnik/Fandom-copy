@@ -72,6 +72,7 @@ builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<IPostSectionService, PostSectionService>();
 builder.Services.AddScoped<IPostImageStorage, PostImageStorage>();
 builder.Services.AddScoped<IPostFileStorage, PostFileStorage>();
+builder.Services.AddScoped<IPostVersionService, PostVersionService>();
 builder.Services.AddScoped<IProfileImageStorage, ProfileImageStorage>();
 
 var app = builder.Build();
@@ -149,6 +150,25 @@ using (var scope = app.Services.CreateScope())
                     FOREIGN KEY ([PostSectionId]) REFERENCES [dbo].[PostSections] ([Id]) ON DELETE CASCADE
             );
             CREATE INDEX [IX_Attachments_PostSectionId] ON [dbo].[Attachments] ([PostSectionId]);
+        END
+        IF OBJECT_ID(N'[dbo].[PostVersions]', N'U') IS NULL
+           AND OBJECT_ID(N'[dbo].[Posts]', N'U') IS NOT NULL
+           AND OBJECT_ID(N'[dbo].[Users]', N'U') IS NOT NULL
+        BEGIN
+            CREATE TABLE [dbo].[PostVersions] (
+                [Id] uniqueidentifier NOT NULL PRIMARY KEY,
+                [PostId] uniqueidentifier NOT NULL,
+                [UserId] uniqueidentifier NOT NULL,
+                [Action] nvarchar(128) NOT NULL,
+                [SnapshotJson] nvarchar(max) NOT NULL,
+                [CreatedAt] datetime2 NOT NULL DEFAULT (SYSUTCDATETIME()),
+                CONSTRAINT [FK_PostVersions_Posts_PostId]
+                    FOREIGN KEY ([PostId]) REFERENCES [dbo].[Posts] ([Id]) ON DELETE CASCADE,
+                CONSTRAINT [FK_PostVersions_Users_UserId]
+                    FOREIGN KEY ([UserId]) REFERENCES [dbo].[Users] ([Id]) ON DELETE NO ACTION
+            );
+            CREATE INDEX [IX_PostVersions_PostId_CreatedAt] ON [dbo].[PostVersions] ([PostId], [CreatedAt]);
+            CREATE INDEX [IX_PostVersions_UserId] ON [dbo].[PostVersions] ([UserId]);
         END
         IF OBJECT_ID(N'[dbo].[Tags]', N'U') IS NULL
         BEGIN

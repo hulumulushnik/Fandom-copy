@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Fandom_copy")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bd9ab62c168c8903c5e9e93ba36ebc91032c8566")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fd1cd2be81f84b91a892e0fce726e2f954160372")]
 [assembly: System.Reflection.AssemblyProductAttribute("Fandom_copy")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Fandom_copy")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

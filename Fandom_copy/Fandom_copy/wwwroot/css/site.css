@@ -99,6 +99,15 @@ a { color: #ff735f; }
 .attachment-meta { min-width: 0; flex: 1; display: grid; gap: 2px; }
 .attachment-meta strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .92rem; }
 .attachment-meta small { color: #aeb3ca; font-weight: 700; }
+.post-version-panel { background: #171b33; border: 1px solid #303658; border-radius: 16px; padding: 18px; box-shadow: 0 16px 45px #0004; }
+.post-version-heading { display: flex; justify-content: space-between; gap: 16px; align-items: end; border-bottom: 1px solid #303658; padding-bottom: 12px; margin-bottom: 14px; }
+.post-version-heading h2 { color: #fff7ec; font-size: 1.15rem; font-weight: 950; margin: 0; }
+.post-version-heading small { color: #aeb3ca; max-width: 360px; text-align: right; }
+.post-version-list { display: grid; gap: 10px; }
+.post-version-item { display: flex; justify-content: space-between; gap: 12px; align-items: center; background: #101528; border: 1px solid #303658; border-radius: 12px; padding: 10px 12px; }
+.post-version-item strong { display: block; color: #eef0fb; }
+.post-version-item small { display: block; color: #aeb3ca; margin-top: 2px; }
+.post-version-item form { margin: 0; flex: 0 0 auto; }
 .fandom-toolbelt { display: flex; justify-content: space-between; gap: 16px; align-items: center; background: linear-gradient(135deg, #211b2f, #141a31); border: 1px solid #3a4165; border-radius: 16px; padding: 16px 18px; margin-bottom: 18px; box-shadow: 0 14px 38px #0004; }
 .fandom-toolbelt strong { color: #fff7ec; display: block; }
 .fandom-toolbelt span { color: #b9bfd4; }
@@ -303,7 +312,8 @@ html[data-theme="light"] .structure-heading h1, html[data-theme="light"] .editor
 html[data-theme="light"] .posts-heading h1, html[data-theme="light"] .search-heading h1,
 html[data-theme="light"] .home-section-heading h2, html[data-theme="light"] .tool-card h2,
 html[data-theme="light"] .settings-block h2, html[data-theme="light"] .media-uploader h2,
-html[data-theme="light"] .wiki-attachments-heading h2 { color: #1c1f2e; text-shadow: none; }
+html[data-theme="light"] .wiki-attachments-heading h2,
+html[data-theme="light"] .post-version-heading h2 { color: #1c1f2e; text-shadow: none; }
 html[data-theme="light"] .wiki-hero p, html[data-theme="light"] .wiki-copy,
 html[data-theme="light"] .structure-heading p, html[data-theme="light"] .editor-heading p,
 html[data-theme="light"] .settings-hint, html[data-theme="light"] .media-uploader p { color: #4a4f68; }
@@ -317,9 +327,14 @@ html[data-theme="light"] .saved-item, html[data-theme="light"] .wiki-image-block
 html[data-theme="light"] .media-uploader, html[data-theme="light"] .lang-option,
 html[data-theme="light"] .theme-option, html[data-theme="light"] .image-preview-grid figure,
 html[data-theme="light"] .existing-media-strip figure, html[data-theme="light"] .wiki-attachments-block,
-html[data-theme="light"] .attachment-item { background: #ffffff; border-color: #e3e5f1; color: #1c1f2e; }
+html[data-theme="light"] .attachment-item, html[data-theme="light"] .post-version-panel,
+html[data-theme="light"] .post-version-item { background: #ffffff; border-color: #e3e5f1; color: #1c1f2e; }
 html[data-theme="light"] .attachment-item { background: #f7f8fc; }
-html[data-theme="light"] .attachment-meta small { color: #4a4f68; }
+html[data-theme="light"] .post-version-item { background: #f7f8fc; }
+html[data-theme="light"] .attachment-meta small,
+html[data-theme="light"] .post-version-heading small,
+html[data-theme="light"] .post-version-item small { color: #4a4f68; }
+html[data-theme="light"] .post-version-item strong { color: #1c1f2e; }
 html[data-theme="light"] .lang-option, html[data-theme="light"] .theme-option { background: #f7f8fc; }
 html[data-theme="light"] .lang-option.active, html[data-theme="light"] .theme-option.active { background: #ffe3dc; border-color: #d9432c; color: #1c1f2e; }
 html[data-theme="light"] .editor-card input, html[data-theme="light"] .editor-card textarea,
@@ -380,9 +395,9 @@ html[data-theme="light"] .divider::after { background:#e3e5f1; }
 .profile-shell .profile-heading { margin-top: -34px; padding: 0 6px; align-items: flex-end; }
 .profile-view-link { margin-top: 10px; padding: 8px 14px; font-size: .85rem; }
 
-.profile-avatar-frame { --frame-size: 96px; width: var(--frame-size); height: var(--frame-size); border-radius: 50%; padding: 5px; box-sizing: border-box; display: grid; place-items: center; flex: 0 0 auto; background: #303658; }
-.profile-avatar-frame .profile-avatar-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; background: #0f1326; }
-.profile-avatar-frame .avatar { width: 100%; height: 100%; border-radius: 50%; margin: 0; }
+.profile-avatar-frame { --frame-size: 96px; width: var(--frame-size); height: var(--frame-size); border-radius: 50%; padding: 5px; box-sizing: border-box; display: grid; place-items: center; flex: 0 0 auto; background: #303658; overflow: hidden; position: relative; }
+.profile-avatar-frame .profile-avatar-img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-width: 0; min-height: 0; border-radius: 50%; object-fit: cover; display: block; background: #0f1326; overflow: hidden; }
+.profile-avatar-frame .avatar { width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-width: 0; min-height: 0; border-radius: 50%; margin: 0; overflow: hidden; }
 .profile-avatar-frame.frame-none { background: #303658; box-shadow: none; }
 .profile-avatar-frame.frame-gold { background: conic-gradient(from 180deg, #ffe9a8, #b8860b, #ffd76a, #b8860b, #ffe9a8); box-shadow: 0 0 18px #ffd76a77, 0 4px 14px #0006; }
 .profile-avatar-frame.frame-neon { background: conic-gradient(from 180deg, #38f7ff, #7dffb0, #38f7ff, #ff5fd2, #38f7ff); box-shadow: 0 0 18px #38f7ffaa, 0 4px 14px #0006; }

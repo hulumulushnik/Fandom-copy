@@ -17,12 +17,14 @@ public class PostContentController : Controller
     private readonly ApplicationDbContext _db;
     private readonly IPostService _posts;
     private readonly IPostImageStorage _imageStorage;
+    private readonly IPostVersionService _versions;
 
-    public PostContentController(ApplicationDbContext db, IPostService posts, IPostImageStorage imageStorage)
+    public PostContentController(ApplicationDbContext db, IPostService posts, IPostImageStorage imageStorage, IPostVersionService versions)
     {
         _db = db;
         _posts = posts;
         _imageStorage = imageStorage;
+        _versions = versions;
     }
 
     [HttpGet("")]
@@ -45,6 +47,13 @@ public class PostContentController : Controller
         if (string.IsNullOrWhiteSpace(dto.NewText))
         {
             TempData["Error"] = "Введите текст блока.";
+            return RedirectToEditor(postId, sectionId);
+        }
+
+        var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentTextAdded");
+        if (!snapshot.Success)
+        {
+            TempData["Error"] = snapshot.Error;
             return RedirectToEditor(postId, sectionId);
         }
 
@@ -78,6 +87,13 @@ public class PostContentController : Controller
         if (files.Count == 0)
         {
             TempData["Error"] = "Выберите изображение.";
+            return RedirectToEditor(postId, sectionId);
+        }
+
+        var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentImageAdded");
+        if (!snapshot.Success)
+        {
+            TempData["Error"] = snapshot.Error;
             return RedirectToEditor(postId, sectionId);
         }
 
@@ -138,6 +154,13 @@ public class PostContentController : Controller
             return RedirectToEditor(postId, sectionId);
         }
 
+        var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentSectionLinked");
+        if (!snapshot.Success)
+        {
+            TempData["Error"] = snapshot.Error;
+            return RedirectToEditor(postId, sectionId);
+        }
+
         _db.PostContentBlocks.Add(new PostContentBlock
         {
             Id = Guid.NewGuid(),
@@ -171,6 +194,13 @@ public class PostContentController : Controller
 
         if (block is not null)
         {
+            var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentTextUpdated");
+            if (!snapshot.Success)
+            {
+                TempData["Error"] = snapshot.Error;
+                return RedirectToEditor(postId, sectionId);
+            }
+
             block.Text = text.Trim();
             post.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
@@ -192,6 +222,13 @@ public class PostContentController : Controller
 
         if (block is not null)
         {
+            var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentImageCaptionUpdated");
+            if (!snapshot.Success)
+            {
+                TempData["Error"] = snapshot.Error;
+                return RedirectToEditor(postId, sectionId);
+            }
+
             block.ImageCaption = (imageCaption ?? string.Empty).Trim();
             if (block.ImageCaption.Length > 240)
                 block.ImageCaption = block.ImageCaption[..240];
@@ -220,6 +257,13 @@ public class PostContentController : Controller
 
         if (index >= 0 && target >= 0 && target < blocks.Count)
         {
+            var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentBlockMoved");
+            if (!snapshot.Success)
+            {
+                TempData["Error"] = snapshot.Error;
+                return RedirectToEditor(postId, sectionId);
+            }
+
             (blocks[index].Order, blocks[target].Order) = (blocks[target].Order, blocks[index].Order);
             post.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
@@ -241,8 +285,12 @@ public class PostContentController : Controller
 
         if (block is not null)
         {
-            if (block.Type == PostContentBlockType.Image)
-                _imageStorage.Delete(block.ImagePath);
+            var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentBlockDeleted");
+            if (!snapshot.Success)
+            {
+                TempData["Error"] = snapshot.Error;
+                return RedirectToEditor(postId, sectionId);
+            }
 
             _db.PostContentBlocks.Remove(block);
             await NormalizeOrdersAsync(postId, sectionId);
@@ -264,6 +312,11 @@ public class PostContentController : Controller
         }
 
         return await _db.Posts.FirstAsync(p => p.Id == postId);
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        return Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 
     private async Task<PostContentEditorDto> BuildModel(Guid postId, Guid? sectionId, string postTitle)

@@ -18,14 +18,16 @@ namespace Fandom_copy.Controllers
         private readonly ApplicationDbContext _db;
         private readonly IPostImageStorage _imageStorage;
         private readonly IPostFileStorage _fileStorage;
+        private readonly IPostVersionService _versions;
 
-        public PostSectionsController(IPostSectionService sectionService, IPostService postService, ApplicationDbContext db, IPostImageStorage imageStorage, IPostFileStorage fileStorage)
+        public PostSectionsController(IPostSectionService sectionService, IPostService postService, ApplicationDbContext db, IPostImageStorage imageStorage, IPostFileStorage fileStorage, IPostVersionService versions)
         {
             _sectionService = sectionService;
             _postService = postService;
             _db = db;
             _imageStorage = imageStorage;
             _fileStorage = fileStorage;
+            _versions = versions;
         }
 
         // GET /posts/{postId}/sections/{id}
@@ -274,7 +276,13 @@ namespace Fandom_copy.Controllers
                 return RedirectToAction(nameof(Edit), new { postId, id });
             }
 
-            _fileStorage.Delete(attachment.Path);
+            var snapshot = await _versions.CaptureAsync(postId, userId, "AttachmentDeleted");
+            if (!snapshot.Success)
+            {
+                TempData["Error"] = snapshot.Error;
+                return RedirectToAction(nameof(Edit), new { postId, id });
+            }
+
             _db.Attachments.Remove(attachment);
 
             var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == postId && !p.IsDeleted);
@@ -306,9 +314,6 @@ namespace Fandom_copy.Controllers
 
             if (removeIcon)
             {
-                if (!string.IsNullOrWhiteSpace(section.IconPath))
-                    _imageStorage.Delete(section.IconPath);
-
                 section.IconPath = null;
                 await _db.SaveChangesAsync();
                 return ServiceResult.Ok();
@@ -317,9 +322,6 @@ namespace Fandom_copy.Controllers
             var saved = await _imageStorage.SaveAsync(postId, iconFile);
             if (!saved.Success)
                 return ServiceResult.Fail(saved.Error ?? "Не вдалося завантажити іконку");
-
-            if (!string.IsNullOrWhiteSpace(section.IconPath))
-                _imageStorage.Delete(section.IconPath);
 
             section.IconPath = saved.RelativePath;
             await _db.SaveChangesAsync();

@@ -8,10 +8,12 @@ namespace Fandom_copy.Services
     public class PostService : IPostService
     {
         private readonly ApplicationDbContext _db;
+        private readonly IPostVersionService _versions;
 
-        public PostService(ApplicationDbContext db)
+        public PostService(ApplicationDbContext db, IPostVersionService versions)
         {
             _db = db;
+            _versions = versions;
         }
 
         public async Task<ServiceResult<List<PostDto>>> GetAllAsync(Guid? currentUserId, Guid? categoryId = null)
@@ -167,6 +169,10 @@ namespace Fandom_copy.Services
             if (!categoryExists)
                 return ServiceResult<PostDto>.Fail("Категорію не знайдено");
 
+            var snapshot = await _versions.CaptureAsync(id, currentUserId, "PostUpdated");
+            if (!snapshot.Success)
+                return ServiceResult<PostDto>.Fail(snapshot.Error ?? "Не вдалося зберегти попередню версію");
+
             var oldDescription = post.Description;
             var newDescription = dto.Description?.Trim() ?? string.Empty;
 
@@ -231,6 +237,10 @@ namespace Fandom_copy.Services
 
             if (member is null || member.Role != PostRole.Owner)
                 return ServiceResult.Fail("Тільки власник може видалити пост");
+
+            var snapshot = await _versions.CaptureAsync(id, currentUserId, "PostDeleted");
+            if (!snapshot.Success)
+                return ServiceResult.Fail(snapshot.Error ?? "Не вдалося зберегти попередню версію");
 
             post.IsDeleted = true;
             post.UpdatedAt = DateTime.UtcNow;

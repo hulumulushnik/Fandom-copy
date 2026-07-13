@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = Model.Title;
     var sectionLookup = Model.Sections.ToDictionary(s => s.Id);
+    var postVersions = ViewBag.PostVersions as List<PostVersionDto> ?? new List<PostVersionDto>();
 }
 
 <nav class="wiki-back"><a asp-controller="Posts" asp-action="Index">← К публикациям</a></nav>
@@ -67,6 +68,47 @@
         }
     </div>
 </section>
+
+@if (Model.CanManageMembers)
+{
+    <section class="wiki-content">
+        <div class="post-version-panel">
+            <div class="post-version-heading">
+                <div>
+                    <span class="wiki-kicker">Owner tools</span>
+                    <h2>Откат поста</h2>
+                </div>
+                <small>Версии создаются автоматически перед изменениями редакторов.</small>
+            </div>
+            @if (postVersions.Any())
+            {
+                <div class="post-version-list">
+                    @foreach (var version in postVersions)
+                    {
+                        <div class="post-version-item">
+                            <div>
+                                <strong>@version.Action</strong>
+                                <small>@version.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm") · @version.UserLogin</small>
+                            </div>
+                            <form asp-action="RestoreVersion"
+                                  asp-route-id="@Model.Id"
+                                  asp-route-versionId="@version.Id"
+                                  method="post"
+                                  onsubmit="return confirm('Відкотити пост до цієї версії? Поточний стан також буде збережено як резервну версію.');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-warning">Відкотити</button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mb-0">Попередніх версій поки немає.</p>
+            }
+        </div>
+    </section>
+}
 
 @if (Model.ContentBlocks.Any())
 {
