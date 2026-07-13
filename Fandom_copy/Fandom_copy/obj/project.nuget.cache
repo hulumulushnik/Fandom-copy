@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "qtLHRUL1nik=",
+  "dgSpecHash": "7srCgZWL/x0=",
   "success": true,
-  "projectFilePath": "D:\\code\\Розробка Fintech додатків Blockchain\\Курсач\\Fandom_copy\\Fandom_copy\\Fandom_copy.csproj",
+  "projectFilePath": "D:\\code\\Розробка Fintech додатків Blockchain\\Курсач_1\\Fandom_copy\\Fandom_copy\\Fandom_copy.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\smart\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\smart\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

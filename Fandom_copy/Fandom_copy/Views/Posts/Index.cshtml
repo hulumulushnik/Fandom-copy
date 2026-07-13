@@ -1,17 +1,25 @@
 @using Fandom_copy.DTOs.Posts
 @model List<PostDto>
 @{
-    ViewData["Title"] = "Пости";
+    var currentLang = UiText.Normalize(Context.Request.Cookies[SettingsController.LangCookie]);
+    ViewData["Title"] = UiText.T(currentLang, "posts.title");
+}
+
+@if (ViewBag.CategoryName is string categoryName)
+{
+    <div class="wiki-back">
+        <a asp-controller="Categories" asp-action="Details" asp-route-id="@ViewBag.CategoryId">← @categoryName</a>
+    </div>
 }
 
 <div class="posts-heading">
     <div>
-        <p class="wiki-kicker">Спільнота FandomHub</p>
-        <h1>Пости</h1>
+        <p class="wiki-kicker">@UiText.T(currentLang, "posts.community")</p>
+        <h1>@(ViewBag.CategoryName is string cn ? $"{UiText.T(currentLang, "posts.title")}: {cn}" : UiText.T(currentLang, "posts.title"))</h1>
     </div>
     @if (User?.Identity?.IsAuthenticated == true)
     {
-        <a asp-controller="Posts" asp-action="Create" class="btn btn-primary">+ Створити пост</a>
+        <a asp-controller="Posts" asp-action="Create" class="btn btn-primary">@UiText.T(currentLang, "posts.create")</a>
     }
 </div>
 
@@ -27,8 +35,8 @@
 @if (!Model.Any())
 {
     <div class="empty-structure">
-        <strong>Постів ще немає</strong>
-        <span>Станьте першим — створіть пост і почніть наповнювати вікі.</span>
+        <strong>@UiText.T(currentLang, "posts.empty")</strong>
+        <span>@UiText.T(currentLang, "posts.empty_hint")</span>
     </div>
 }
 else
@@ -67,7 +75,7 @@ else
                     <div class="post-row-meta">
                         <span class="post-tag">@(p.CategoryName ?? "—")</span>
                         <span class="post-tag @(p.IsPublic ? "post-tag-public" : "post-tag-private")">
-                            @(p.IsPublic ? "Публічний" : "Приватний")
+                            @(p.IsPublic ? UiText.T(currentLang, "posts.public") : UiText.T(currentLang, "posts.private"))
                         </span>
                     </div>
                 </div>

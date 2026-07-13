@@ -1,3 +1,230 @@
 @model Fandom_copy.DTOs.Profile.UserProfileDto
-@{ ViewData["Title"] = "My profile"; }
-<section class="profile-shell"><div class="profile-heading"><div class="avatar">@Model.Login[..1].ToUpper()</div><div><p class="eyebrow">MY ACCOUNT</p><h1>@Model.Login</h1><p class="muted">Member since @Model.RegistrationDate.ToString("MMMM yyyy") · @Model.GlobalRole</p></div></div>@if (TempData["Success"] is string message) { <div class="notice success">@message</div> }<div class="profile-grid"><article class="profile-card"><h2>Profile details</h2><form method="post"><div asp-validation-summary="ModelOnly" class="form-error"></div><label for="Login">Username</label><input id="Login" name="Login" value="@Model.Login"/><label for="Email">Email</label><input id="Email" name="Email" type="email" value="@Model.Email"/><p class="verification @(Model.EmailConfirmed ? "verified" : "unverified")">@(Model.EmailConfirmed ? "Email verified" : "Email not verified")</p><button class="primary-btn">Save changes</button></form></article><aside class="profile-card security-card"><h2>Security</h2><p class="muted">Keep your account secure with a unique password.</p><a class="secondary-btn" asp-action="ChangePassword">Change password</a><hr/><h3>Account role</h3><p class="role-pill">@Model.GlobalRole</p></aside></div></section>
+@using Fandom_copy.DTOs.Posts
+@using Fandom_copy.Models
+@{
+    ViewData["Title"] = "My profile";
+    var myPosts = ViewBag.MyPosts as List<PostDto> ?? new List<PostDto>();
+    var frameOptions = new (ProfileFrame Frame, string Label)[]
+    {
+        (ProfileFrame.None, "Без рамки"),
+        (ProfileFrame.Gold, "Золота"),
+        (ProfileFrame.Neon, "Неонова"),
+        (ProfileFrame.Fire, "Вогняна"),
+        (ProfileFrame.Ice, "Крижана"),
+        (ProfileFrame.Royal, "Королівська"),
+        (ProfileFrame.Galaxy, "Галактика"),
+    };
+    var frameClass = "frame-" + Model.ProfileFrameName.ToLowerInvariant();
+}
+<section class="profile-shell">
+    <div class="profile-banner @(string.IsNullOrWhiteSpace(Model.BackgroundUrl) ? "profile-banner-empty" : "")"
+         style="@(string.IsNullOrWhiteSpace(Model.BackgroundUrl) ? "" : $"background-image:url('{Url.Content(Model.BackgroundUrl)}')")">
+    </div>
+
+    <div class="profile-heading">
+        <div class="profile-avatar-frame @frameClass">
+            @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+            {
+                <img src="@Url.Content(Model.AvatarUrl)" alt="@Model.Login" class="profile-avatar-img" />
+            }
+            else
+            {
+                <div class="avatar">@Model.Login[..1].ToUpper()</div>
+            }
+        </div>
+        <div>
+            <p class="eyebrow">MY ACCOUNT</p>
+            <h1>@Model.Login</h1>
+            <p class="muted">Member since @Model.RegistrationDate.ToString("MMMM yyyy") · @Model.GlobalRole</p>
+            <a class="secondary-btn profile-view-link" asp-action="PublicProfile" asp-route-login="@Model.Login">Переглянути публічний профіль</a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] is string message)
+    {
+        <div class="notice success">@message</div>
+    }
+    @if (TempData["Error"] is string err)
+    {
+        <div class="notice error">@err</div>
+    }
+
+    <div class="profile-grid">
+        <article class="profile-card">
+            <h2>Profile details</h2>
+            <form method="post">
+                <div asp-validation-summary="ModelOnly" class="form-error"></div>
+                <label for="Login">Username</label>
+                <input id="Login" name="Login" value="@Model.Login" />
+                <label for="Email">Email</label>
+                <input id="Email" name="Email" type="email" value="@Model.Email" />
+                <p class="verification @(Model.EmailConfirmed ? "verified" : "unverified")">@(Model.EmailConfirmed ? "Email verified" : "Email not verified")</p>
+                <button class="primary-btn">Save changes</button>
+            </form>
+        </article>
+        <aside class="profile-card security-card">
+            <h2>Security</h2>
+            <p class="muted">Keep your account secure with a unique password.</p>
+            <a class="secondary-btn" asp-action="ChangePassword">Change password</a>
+            <hr />
+            <h3>Account role</h3>
+            <p class="role-pill">@Model.GlobalRole</p>
+        </aside>
+    </div>
+
+    <div class="profile-grid customization-grid">
+        <article class="profile-card">
+            <h2>Іконка профілю</h2>
+            <p class="muted">Завантажте фото або гіфку — вона буде показуватись поруч із вашими постами.</p>
+            <div class="customization-preview">
+                <div class="profile-avatar-frame @frameClass customization-preview-frame">
+                    @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+                    {
+                        <img src="@Url.Content(Model.AvatarUrl)" alt="@Model.Login" class="profile-avatar-img" />
+                    }
+                    else
+                    {
+                        <div class="avatar">@Model.Login[..1].ToUpper()</div>
+                    }
+                </div>
+                <div class="customization-actions">
+                    <form asp-action="UploadAvatar" method="post" enctype="multipart/form-data" class="upload-form">
+                        @Html.AntiForgeryToken()
+                        <label class="file-input-label">
+                            <input type="file" name="avatarFile" accept="image/png,image/jpeg,image/webp,image/gif" required />
+                            <span>Обрати фото / гіфку</span>
+                        </label>
+                        <button type="submit" class="primary-btn">Завантажити</button>
+                    </form>
+                    @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+                    {
+                        <form asp-action="RemoveAvatar" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="secondary-btn">Видалити іконку</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </article>
+
+        <article class="profile-card">
+            <h2>Фон профілю</h2>
+            <p class="muted">Фото або гіфка, яка показується як банер вашого профілю.</p>
+            <div class="customization-preview">
+                <div class="profile-background-preview @(string.IsNullOrWhiteSpace(Model.BackgroundUrl) ? "profile-banner-empty" : "")"
+                     style="@(string.IsNullOrWhiteSpace(Model.BackgroundUrl) ? "" : $"background-image:url('{Url.Content(Model.BackgroundUrl)}')")">
+                </div>
+                <div class="customization-actions">
+                    <form asp-action="UploadBackground" method="post" enctype="multipart/form-data" class="upload-form">
+                        @Html.AntiForgeryToken()
+                        <label class="file-input-label">
+                            <input type="file" name="backgroundFile" accept="image/png,image/jpeg,image/webp,image/gif" required />
+                            <span>Обрати фото / гіфку</span>
+                        </label>
+                        <button type="submit" class="primary-btn">Завантажити</button>
+                    </form>
+                    @if (!string.IsNullOrWhiteSpace(Model.BackgroundUrl))
+                    {
+                        <form asp-action="RemoveBackground" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="secondary-btn">Видалити фон</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <article class="profile-card frame-picker-card">
+        <h2>Рамка профілю</h2>
+        <p class="muted">Оберіть декоративну рамку для вашого аватара.</p>
+        <div class="frame-picker-grid">
+            @foreach (var option in frameOptions)
+            {
+                var optionClass = "frame-" + option.Frame.ToString().ToLowerInvariant();
+                var isSelected = option.Frame == Model.ProfileFrame;
+                <form asp-action="SetFrame" method="post" class="frame-picker-item-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="frame" value="@option.Frame" />
+                    <button type="submit" class="frame-picker-item @(isSelected ? "selected" : "")">
+                        <span class="profile-avatar-frame @optionClass frame-picker-avatar">
+                            @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+                            {
+                                <img src="@Url.Content(Model.AvatarUrl)" alt="@option.Label" class="profile-avatar-img" />
+                            }
+                            else
+                            {
+                                <span class="avatar">@Model.Login[..1].ToUpper()</span>
+                            }
+                        </span>
+                        <small>@option.Label</small>
+                    </button>
+                </form>
+            }
+        </div>
+    </article>
+
+    <div class="posts-heading">
+        <div>
+            <p class="wiki-kicker">Мій внесок</p>
+            <h1>Мої пости</h1>
+        </div>
+        @if (myPosts.Any())
+        {
+            <a asp-controller="Posts" asp-action="Create" class="btn btn-primary">+ Створити пост</a>
+        }
+    </div>
+
+    @if (!myPosts.Any())
+    {
+        <div class="empty-structure">
+            <strong>Ви ще не створили жодного поста</strong>
+            <span>Почніть наповнювати вікі — створіть свій перший пост.</span>
+            <a asp-controller="Posts" asp-action="Create" class="btn btn-primary">Створити перший пост</a>
+        </div>
+    }
+    else
+    {
+        <div class="posts-list">
+            @foreach (var p in myPosts)
+            {
+                var cover = !string.IsNullOrWhiteSpace(p.IconPath)
+                    ? p.IconPath
+                    : p.ContentBlocks
+                        .Where(b => b.Type == PostContentBlockType.Image)
+                        .OrderBy(b => b.Order)
+                        .Select(b => b.ImagePath)
+                        .FirstOrDefault();
+
+                <a asp-controller="Posts" asp-action="Details" asp-route-id="@p.Id" class="post-row">
+                    <div class="post-row-thumb">
+                        @if (!string.IsNullOrWhiteSpace(cover))
+                        {
+                            <img src="@Url.Content(cover)" alt="@p.Title" />
+                        }
+                        else
+                        {
+                            <span class="wiki-topic-placeholder">@p.Title.Substring(0, 1).ToUpper()</span>
+                        }
+                    </div>
+                    <div class="post-row-body">
+                        <div class="post-row-top">
+                            <h5>@p.Title</h5>
+                            <small class="post-row-date">@p.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(p.Description))
+                        {
+                            <p class="post-row-desc">@p.Description</p>
+                        }
+                        <div class="post-row-meta">
+                            <span class="post-tag">@(p.CategoryName ?? "—")</span>
+                            <span class="post-tag @(p.IsPublic ? "post-tag-public" : "post-tag-private")">
+                                @(p.IsPublic ? "Публічний" : "Приватний")
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</section>

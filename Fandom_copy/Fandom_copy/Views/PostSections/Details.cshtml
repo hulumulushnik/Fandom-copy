@@ -1,7 +1,9 @@
 @using Fandom_copy.DTOs.Posts
 @using Fandom_copy.Models
+@using Fandom_copy.Services
 @model PostSectionDto
 @{
+    var currentLang = UiText.Normalize(Context.Request.Cookies[SettingsController.LangCookie]);
     var post = ViewBag.Post as PostDto;
     ViewData["Title"] = Model.Title;
     var canEdit = post?.CanEdit ?? false;
@@ -9,7 +11,7 @@
 }
 
 <nav class="wiki-back">
-    <a asp-controller="Posts" asp-action="Details" asp-route-id="@Model.PostId">← @(post?.Title ?? "Публикация")</a>
+    <a asp-controller="Posts" asp-action="Details" asp-route-id="@Model.PostId">← @(post?.Title ?? UiText.T(currentLang, "section.post"))</a>
     @foreach (var crumb in Model.Breadcrumbs)
     {
         <span>/</span>
@@ -18,14 +20,14 @@
 </nav>
 
 <section class="wiki-hero wiki-hero-compact">
-    <div class="wiki-kicker">Под-пост</div>
+    <div class="wiki-kicker">@UiText.T(currentLang, "section.subpost")</div>
     <h1>@Model.Title</h1>
     @if (canEdit)
     {
         <div class="wiki-actions">
-            <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-postId="@Model.PostId" asp-route-id="@Model.Id">Редактировать</a>
-            <a class="btn btn-outline-primary" asp-controller="PostContent" asp-action="Index" asp-route-postId="@Model.PostId" asp-route-sectionId="@Model.Id">Структура</a>
-            <a class="btn btn-primary" asp-action="Create" asp-route-postId="@Model.PostId" asp-route-parentSectionId="@Model.Id">+ Под-пост</a>
+            <a class="btn btn-outline-secondary" asp-action="Edit" asp-route-postId="@Model.PostId" asp-route-id="@Model.Id">@UiText.T(currentLang, "section.edit")</a>
+            <a class="btn btn-outline-primary" asp-controller="PostContent" asp-action="Index" asp-route-postId="@Model.PostId" asp-route-sectionId="@Model.Id">@UiText.T(currentLang, "section.structure")</a>
+            <a class="btn btn-primary" asp-action="Create" asp-route-postId="@Model.PostId" asp-route-parentSectionId="@Model.Id">@UiText.T(currentLang, "section.add_subpost")</a>
         </div>
     }
 </section>
@@ -35,60 +37,12 @@
     var orderedBlocks = Model.ContentBlocks.OrderBy(b => b.Order).ToList();
     <article class="wiki-content">
         @{
-            var blockIndex = 0;
-            while (blockIndex < orderedBlocks.Count)
-            {
-                var block = orderedBlocks[blockIndex];
-                if (block.Type == PostContentBlockType.Text)
-                {
-                    <div class="wiki-copy">@block.Text</div>
-                    blockIndex++;
-                }
-                else if (block.Type == PostContentBlockType.Image && !string.IsNullOrWhiteSpace(block.ImagePath))
-                {
-                    <figure class="wiki-image-block">
-                        <img src="@Url.Content(block.ImagePath)" alt="@(string.IsNullOrWhiteSpace(block.ImageCaption) ? Model.Title : block.ImageCaption)" />
-                        @if (!string.IsNullOrWhiteSpace(block.ImageCaption))
-                        {
-                            <figcaption>@block.ImageCaption</figcaption>
-                        }
-                    </figure>
-                    blockIndex++;
-                }
-                else if (block.SectionId is Guid)
-                {
-                    <div class="wiki-topic-grid">
-                        @while (blockIndex < orderedBlocks.Count
-                            && orderedBlocks[blockIndex].Type != PostContentBlockType.Text
-                            && !(orderedBlocks[blockIndex].Type == PostContentBlockType.Image && !string.IsNullOrWhiteSpace(orderedBlocks[blockIndex].ImagePath))
-                            && orderedBlocks[blockIndex].SectionId is Guid)
-                        {
-                            var topicBlock = orderedBlocks[blockIndex];
-                            var topicSectionId = topicBlock.SectionId!.Value;
-                            var section = subSectionLookup.GetValueOrDefault(topicSectionId);
-                            <a class="wiki-topic-card" asp-action="Details" asp-route-postId="@Model.PostId" asp-route-id="@topicSectionId">
-                                <span class="wiki-topic-art">
-                                    @if (!string.IsNullOrWhiteSpace(section?.IconPath ?? section?.PrimaryImagePath))
-                                    {
-                                        <img src="@Url.Content(section.IconPath ?? section.PrimaryImagePath)" alt="@topicBlock.SectionTitle" />
-                                    }
-                                    else
-                                    {
-                                        <span class="wiki-topic-placeholder">!</span>
-                                    }
-                                </span>
-                                <strong>@(topicBlock.SectionTitle ?? "Под-пост")</strong>
-                                <small>Открыть под-пост →</small>
-                            </a>
-                            blockIndex++;
-                        }
-                    </div>
-                }
-                else
-                {
-                    blockIndex++;
-                }
-            }
+            await Html.RenderPartialAsync("/Views/Posts/_ContentBlocks.cshtml", new Fandom_copy.Views.Posts.ContentBlocksModel {
+                Blocks = orderedBlocks,
+                SectionLookup = subSectionLookup,
+                PostId = Model.PostId,
+                FallbackTitle = Model.Title
+            });
         }
     </article>
 }
@@ -98,7 +52,7 @@ else
         <div class="wiki-copy">@Model.Text</div>
         @if (!Model.SubSections.Any())
         {
-            <p class="text-muted">Пока нет вложенных под-постов.</p>
+            <p class="text-muted">@UiText.T(currentLang, "section.no_subposts")</p>
         }
         else
         {
@@ -117,10 +71,50 @@ else
                             }
                         </span>
                         <strong>@sub.Title</strong>
-                        <small>Открыть →</small>
+                        <small>@UiText.T(currentLang, "section.open") →</small>
                     </a>
                 }
             </div>
         }
     </article>
+}
+
+@if (Model.Attachments.Any())
+{
+    <section class="wiki-content">
+        <div class="wiki-attachments-block">
+            <div class="wiki-attachments-heading">
+                <span class="wiki-kicker">@UiText.T(currentLang, "section.files_kicker")</span>
+                <h2>@UiText.T(currentLang, "section.attached_files")</h2>
+            </div>
+            <div class="attachment-list">
+                @foreach (var file in Model.Attachments)
+                {
+                    <a class="attachment-item attachment-link" href="@Url.Content(file.Path)" download>
+                        <span class="attachment-icon">@UiText.T(currentLang, "section.file_badge")</span>
+                        <span class="attachment-meta">
+                            <strong>@file.FileName</strong>
+                            <small>@FormatFileSize(file.Size, currentLang)</small>
+                        </span>
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@functions {
+    private static string FormatFileSize(long bytes, string lang)
+    {
+        const double kiloByte = 1024d;
+        const double megaByte = kiloByte * 1024d;
+
+        var mb = UiText.T(lang, "unit.mb");
+        var kb = UiText.T(lang, "unit.kb");
+
+        if (bytes >= megaByte)
+            return $"{bytes / megaByte:0.#} {mb}";
+
+        return $"{Math.Max(bytes / kiloByte, 0.1):0.#} {kb}";
+    }
 }

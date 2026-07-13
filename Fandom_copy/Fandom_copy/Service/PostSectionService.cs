@@ -8,16 +8,19 @@ namespace Fandom_copy.Services
     public class PostSectionService : IPostSectionService
     {
         private readonly ApplicationDbContext _db;
+        private readonly IPostVersionService _versions;
 
-        public PostSectionService(ApplicationDbContext db)
+        public PostSectionService(ApplicationDbContext db, IPostVersionService versions)
         {
             _db = db;
+            _versions = versions;
         }
 
         public async Task<ServiceResult<PostSectionDto>> GetByIdAsync(Guid id, Guid? currentUserId)
         {
             var section = await _db.PostSections
                 .Include(s => s.SubSections)
+                .Include(s => s.Files)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (section is null)
@@ -42,6 +45,7 @@ namespace Fandom_copy.Services
             var dto = PostSectionDto.FromEntity(section, includeSubSections: true);
             var contentBlocks = await _db.PostContentBlocks
                 .Include(b => b.Section)
+                .Include(b => b.GalleryImages)
                 .Where(b => b.ContainerSectionId == section.Id)
                 .OrderBy(b => b.Order)
                 .ToListAsync();
@@ -107,6 +111,10 @@ namespace Fandom_copy.Services
                 dto.ParentSectionId = null;
             }
 
+            var snapshot = await _versions.CaptureAsync(dto.PostId, currentUserId, "SectionCreated");
+            if (!snapshot.Success)
+                return ServiceResult<PostSectionDto>.Fail(snapshot.Error ?? "Не вдалося зберегти попередню версію");
+
             var section = new PostSection
             {
                 Id = Guid.NewGuid(),
@@ -163,6 +171,10 @@ namespace Fandom_copy.Services
 
             if (!await CanEditAsync(section.PostId, currentUserId))
                 return ServiceResult<PostSectionDto>.Fail("Немає прав на редагування");
+
+            var snapshot = await _versions.CaptureAsync(section.PostId, currentUserId, "SectionUpdated");
+            if (!snapshot.Success)
+                return ServiceResult<PostSectionDto>.Fail(snapshot.Error ?? "Не вдалося зберегти попередню версію");
 
             var oldText = section.Text;
             var newText = dto.Text?.Trim() ?? string.Empty;
@@ -230,6 +242,10 @@ namespace Fandom_copy.Services
 
             if (!await CanEditAsync(section.PostId, currentUserId))
                 return ServiceResult.Fail("Немає прав на видалення");
+
+            var snapshot = await _versions.CaptureAsync(section.PostId, currentUserId, "SectionDeleted");
+            if (!snapshot.Success)
+                return ServiceResult.Fail(snapshot.Error ?? "Не вдалося зберегти попередню версію");
 
             // Каскадне видалення дочірніх підпостів (обмежене на рівні БД, тому робимо руками)
             await DeleteSectionRecursiveAsync(section);

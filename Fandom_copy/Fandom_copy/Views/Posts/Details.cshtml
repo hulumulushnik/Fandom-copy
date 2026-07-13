@@ -1,9 +1,11 @@
 @using Fandom_copy.DTOs.Posts
 @using Fandom_copy.Models
+@using Fandom_copy.Services
 @model PostDto
 @{
     ViewData["Title"] = Model.Title;
     var sectionLookup = Model.Sections.ToDictionary(s => s.Id);
+    var postComments = ViewBag.PostComments as List<PostCommentDto> ?? new List<PostCommentDto>();
 }
 
 <nav class="wiki-back"><a asp-controller="Posts" asp-action="Index">← К публикациям</a></nav>
@@ -11,9 +13,39 @@
 @if (TempData["Error"] is string err) { <div class="alert alert-danger">@err</div> }
 @if (TempData["Message"] is string msg) { <div class="alert alert-success">@msg</div> }
 
+@if (Model.Author is not null)
+{
+    var authorFrameClass = "frame-" + Model.Author.ProfileFrameName.ToLowerInvariant();
+    <a class="post-author-card" asp-controller="Account" asp-action="PublicProfile" asp-route-login="@Model.Author.Login">
+        <span class="profile-avatar-frame post-author-frame @authorFrameClass">
+            @if (!string.IsNullOrWhiteSpace(Model.Author.AvatarUrl))
+            {
+                <img src="@Url.Content(Model.Author.AvatarUrl)" alt="@Model.Author.Login" class="profile-avatar-img" />
+            }
+            else
+            {
+                <span class="avatar">@Model.Author.Login[..1].ToUpper()</span>
+            }
+        </span>
+        <span class="post-author-meta">
+            <small>Автор поста</small>
+            <strong>@Model.Author.Login</strong>
+        </span>
+    </a>
+}
+
 <section class="wiki-hero">
     <div class="wiki-kicker">@(Model.CategoryName ?? "Fandom page") · @(Model.IsPublic ? "Публичная" : "Приватная")</div>
     <h1>Welcome to the <em>@Model.Title</em> Wiki!</h1>
+    @if (Model.TagNames.Any())
+    {
+        <div class="post-row-meta wiki-tag-list">
+            @foreach (var tag in Model.TagNames)
+            {
+                <span class="post-tag">@tag</span>
+            }
+        </div>
+    }
     @if (!string.IsNullOrWhiteSpace(Model.Description))
     {
         <p>@Model.Description</p>
@@ -38,65 +70,34 @@
     </div>
 </section>
 
+@if (ViewBag.CanManageBackups is true)
+{
+    <section class="wiki-content">
+        <a class="post-backups-link" asp-action="Versions" asp-route-id="@Model.Id">
+            <span class="post-backups-link-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /><path d="M12 7v5l4 2" /></svg>
+            </span>
+            <span class="post-backups-link-text">
+                <span class="wiki-kicker">Owner tools</span>
+                <strong>Резервні копії поста</strong>
+                <small>Переглянути історію змін і відкотити пост до попередньої версії</small>
+            </span>
+            <span class="post-backups-link-arrow">→</span>
+        </a>
+    </section>
+}
+
 @if (Model.ContentBlocks.Any())
 {
     var orderedBlocks = Model.ContentBlocks.OrderBy(b => b.Order).ToList();
     <article class="wiki-content">
         @{
-            var blockIndex = 0;
-            while (blockIndex < orderedBlocks.Count)
-            {
-                var block = orderedBlocks[blockIndex];
-                if (block.Type == PostContentBlockType.Text)
-                {
-                    <div class="wiki-copy">@block.Text</div>
-                    blockIndex++;
-                }
-                else if (block.Type == PostContentBlockType.Image && !string.IsNullOrWhiteSpace(block.ImagePath))
-                {
-                    <figure class="wiki-image-block">
-                        <img src="@Url.Content(block.ImagePath)" alt="@(string.IsNullOrWhiteSpace(block.ImageCaption) ? Model.Title : block.ImageCaption)" />
-                        @if (!string.IsNullOrWhiteSpace(block.ImageCaption))
-                        {
-                            <figcaption>@block.ImageCaption</figcaption>
-                        }
-                    </figure>
-                    blockIndex++;
-                }
-                else if (block.SectionId is Guid)
-                {
-                    <div class="wiki-topic-grid">
-                        @while (blockIndex < orderedBlocks.Count
-                            && orderedBlocks[blockIndex].Type != PostContentBlockType.Text
-                            && !(orderedBlocks[blockIndex].Type == PostContentBlockType.Image && !string.IsNullOrWhiteSpace(orderedBlocks[blockIndex].ImagePath))
-                            && orderedBlocks[blockIndex].SectionId is Guid)
-                        {
-                            var topicBlock = orderedBlocks[blockIndex];
-                            var topicSectionId = topicBlock.SectionId!.Value;
-                            var section = sectionLookup.GetValueOrDefault(topicSectionId);
-                            <a class="wiki-topic-card" asp-controller="PostSections" asp-action="Details" asp-route-postId="@Model.Id" asp-route-id="@topicSectionId">
-                                <span class="wiki-topic-art">
-                                    @if (!string.IsNullOrWhiteSpace(section?.IconPath ?? section?.PrimaryImagePath))
-                                    {
-                                        <img src="@Url.Content(section.IconPath ?? section.PrimaryImagePath)" alt="@topicBlock.SectionTitle" />
-                                    }
-                                    else
-                                    {
-                                        <span class="wiki-topic-placeholder">!</span>
-                                    }
-                                </span>
-                                <strong>@(topicBlock.SectionTitle ?? "Под-пост")</strong>
-                                <small>Открыть под-пост →</small>
-                            </a>
-                            blockIndex++;
-                        }
-                    </div>
-                }
-                else
-                {
-                    blockIndex++;
-                }
-            }
+            await Html.RenderPartialAsync("_ContentBlocks", new Fandom_copy.Views.Posts.ContentBlocksModel {
+                Blocks = orderedBlocks,
+                SectionLookup = sectionLookup,
+                PostId = Model.Id,
+                FallbackTitle = Model.Title
+            });
         }
     </article>
 }
@@ -132,3 +133,81 @@ else
         }
     </article>
 }
+
+@* ---------------- Коментарі ---------------- *@
+<section id="comments" class="wiki-content post-comments-section">
+    <div class="post-comments-heading">
+        <span class="wiki-kicker">Обговорення</span>
+        <h2>Коментарі <span class="post-comments-count">@postComments.Count</span></h2>
+    </div>
+
+    @if (User?.Identity?.IsAuthenticated == true)
+    {
+        <form asp-controller="Posts" asp-action="AddComment" asp-route-id="@Model.Id" method="post" class="post-comment-form">
+            @Html.AntiForgeryToken()
+            <textarea name="Text" class="post-comment-input" rows="3"
+                      maxlength="2000"
+                      placeholder="Напишіть свій коментар..."
+                      required></textarea>
+            <div class="post-comment-form-actions">
+                <button type="submit" class="btn btn-primary">Надіслати</button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="post-comment-guest">
+            Щоб залишити коментар, <a asp-controller="Account" asp-action="Login">увійдіть</a> у свій акаунт.
+        </div>
+    }
+
+    @if (postComments.Any())
+    {
+        <ul class="post-comment-list">
+            @foreach (var comment in postComments)
+            {
+                var frameClass = "frame-" + comment.Author.ProfileFrameName.ToLowerInvariant();
+                <li class="post-comment-item">
+                    <a class="post-comment-avatar" asp-controller="Account" asp-action="PublicProfile" asp-route-login="@comment.Author.Login"
+                       title="Перейти до профілю @comment.Author.Login">
+                        <span class="profile-avatar-frame post-comment-frame @frameClass">
+                            @if (!string.IsNullOrWhiteSpace(comment.Author.AvatarUrl))
+                            {
+                                <img src="@Url.Content(comment.Author.AvatarUrl)" alt="@comment.Author.Login" class="profile-avatar-img" />
+                            }
+                            else
+                            {
+                                <span class="avatar">@comment.Author.Login[..1].ToUpper()</span>
+                            }
+                        </span>
+                    </a>
+                    <div class="post-comment-body">
+                        <div class="post-comment-meta">
+                            <a class="post-comment-author" asp-controller="Account" asp-action="PublicProfile" asp-route-login="@comment.Author.Login">
+                                @comment.Author.Login
+                            </a>
+                            <small class="post-comment-date">@comment.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</small>
+                            @if (comment.CanDelete)
+                            {
+                                <form asp-controller="Posts" asp-action="DeleteComment"
+                                      asp-route-id="@Model.Id"
+                                      asp-route-commentId="@comment.Id"
+                                      method="post"
+                                      class="post-comment-delete"
+                                      onsubmit="return confirm('Видалити цей коментар?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-link btn-sm">Видалити</button>
+                                </form>
+                            }
+                        </div>
+                        <div class="post-comment-text">@comment.Text</div>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p class="post-comments-empty text-muted">Коментарів поки немає. Будьте першим!</p>
+    }
+</section>

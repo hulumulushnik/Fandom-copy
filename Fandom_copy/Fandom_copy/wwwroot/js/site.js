@@ -28,6 +28,18 @@ document.addEventListener('change', (event) => {
     });
 });
 
+// Settings page: live toggle .active on lang/theme cards when a radio inside them changes.
+document.addEventListener('change', (event) => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || input.type !== 'radio') return;
+    if (!input.name || (input.name !== 'lang' && input.name !== 'theme')) return;
+
+    const cls = input.name === 'lang' ? 'lang-option' : 'theme-option';
+    document.querySelectorAll('.' + cls).forEach(el => el.classList.remove('active'));
+    const wrapper = input.closest('.' + cls);
+    if (wrapper) wrapper.classList.add('active');
+});
+
 document.addEventListener('click', (event) => {
     const button = event.target.closest('[data-template-target]');
     if (!button) return;
@@ -46,4 +58,65 @@ document.addEventListener('click', (event) => {
     target.focus();
     const cursor = before.length + spacer.length + template.length;
     target.setSelectionRange(cursor, cursor);
+});
+
+// ---------------------------------------------------------------------
+// Reveal-on-scroll: fade/slide in card-like content as it enters view.
+// Works on any existing markup without touching the .cshtml views.
+// ---------------------------------------------------------------------
+(() => {
+    const revealSelectors = [
+        '.post-row', '.home-jump-card', '.home-category-card', '.category-card',
+        '.search-result-card', '.saved-item', '.tool-card', '.structure-block',
+        '.admin-metric-card', '.frame-picker-card', '.post-author-card',
+        '.wiki-image-block', '.wiki-topic-card', '.attachment-item',
+        '.post-version-item', '.post-comment-item', '.settings-card',
+        '.account-card', '.profile-card', '.editor-card'
+    ];
+
+    const targets = document.querySelectorAll(revealSelectors.join(','));
+    if (!targets.length) return;
+
+    document.documentElement.classList.add('js-reveal-ready');
+    targets.forEach((el, i) => {
+        el.classList.add('reveal-on-scroll');
+        el.style.setProperty('--reveal-i', String(i % 10));
+    });
+
+    if (!('IntersectionObserver' in window)) {
+        targets.forEach((el) => el.classList.add('in-view'));
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('in-view');
+            observer.unobserve(entry.target);
+        });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+    targets.forEach((el) => observer.observe(el));
+})();
+
+// ---------------------------------------------------------------------
+// Small ripple on primary/secondary/nav buttons for a livelier feel.
+// ---------------------------------------------------------------------
+document.addEventListener('click', (event) => {
+    const btn = event.target.closest('.primary-btn, .secondary-btn, .nav-join, .btn-primary, .rt-btn');
+    if (!btn) return;
+
+    const rect = btn.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    const size = Math.max(rect.width, rect.height);
+
+    ripple.className = 'fx-ripple';
+    ripple.style.width = ripple.style.height = `${size}px`;
+    ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
+    ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
+
+    const previousPosition = getComputedStyle(btn).position;
+    if (previousPosition === 'static') btn.style.position = 'relative';
+    btn.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove());
 });

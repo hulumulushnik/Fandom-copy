@@ -2,17 +2,19 @@
 @using Fandom_copy.Models
 @model UpdatePostSectionDto
 @{
-    ViewData["Title"] = "Редагувати підпост";
+    var currentLang = UiText.Normalize(Context.Request.Cookies[SettingsController.LangCookie]);
+    ViewData["Title"] = UiText.T(currentLang, "subpost.edit_title");
     var postId = (Guid)ViewBag.PostId;
     var sectionId = (Guid)ViewBag.SectionId;
     var sectionImages = ViewBag.SectionImages as List<PostContentBlockDto> ?? new List<PostContentBlockDto>();
+    var sectionFiles = ViewBag.SectionFiles as List<FileAttachmentDto> ?? new List<FileAttachmentDto>();
 }
 
 <section class="editor-page">
     <div class="editor-heading">
-        <p class="wiki-kicker">Редактор подпоста</p>
-        <h1>Редагувати підпост</h1>
-        <p>Основной текст и новые фото можно менять здесь, а точное расположение блоков — в “Структуре”.</p>
+        <p class="wiki-kicker">@UiText.T(currentLang, "subpost.editor")</p>
+        <h1>@UiText.T(currentLang, "subpost.edit_title")</h1>
+        <p>@UiText.T(currentLang, "subpost.intro")</p>
     </div>
 
     <form asp-action="Edit" asp-route-postId="@postId" asp-route-id="@sectionId" method="post" enctype="multipart/form-data" class="editor-card">
@@ -22,19 +24,19 @@
         <div class="editor-two-columns">
             <div class="editor-main-column">
                 <div class="mb-3">
-                    <label asp-for="Title" class="form-label">Заголовок</label>
+                    <label asp-for="Title" class="form-label">@UiText.T(currentLang, "subpost.title_field")</label>
                     <input asp-for="Title" class="form-control" />
                     <span asp-validation-for="Title" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Text" class="form-label">Базовый текст</label>
+                    <label asp-for="Text" class="form-label">@UiText.T(currentLang, "subpost.base_text")</label>
                     <textarea asp-for="Text" class="form-control" rows="12"></textarea>
                     <span asp-validation-for="Text" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Order" class="form-label">Порядок</label>
+                    <label asp-for="Order" class="form-label">@UiText.T(currentLang, "subpost.order")</label>
                     <input asp-for="Order" type="number" class="form-control" />
                     <span asp-validation-for="Order" class="text-danger"></span>
                 </div>
@@ -42,8 +44,8 @@
 
             <aside class="editor-side-column">
                 <div class="media-uploader">
-                    <h2>Іконка підпоста</h2>
-                    <p>Значок картки цього підпоста в структурі — окремо від фото в тексті.</p>
+                    <h2>@UiText.T(currentLang, "subpost.icon")</h2>
+                    <p>@UiText.T(currentLang, "subpost.icon_hint")</p>
                     @{
                         var currentIconPath = ViewBag.CurrentIconPath as string;
                     }
@@ -51,37 +53,68 @@
                     {
                         <div class="existing-media-strip mb-2">
                             <figure>
-                                <img src="@Url.Content(currentIconPath)" alt="Поточна іконка" />
-                                <figcaption>Поточна іконка</figcaption>
+                                <img src="@Url.Content(currentIconPath)" alt="@UiText.T(currentLang, "subpost.current_icon")" />
+                                <figcaption>@UiText.T(currentLang, "subpost.current_icon")</figcaption>
                             </figure>
                         </div>
                         <div class="form-check mb-2">
                             <input type="checkbox" name="removeIcon" value="true" class="form-check-input" id="removeIconCheck" />
-                            <label class="form-check-label" for="removeIconCheck">Прибрати іконку</label>
+                            <label class="form-check-label" for="removeIconCheck">@UiText.T(currentLang, "subpost.remove_icon")</label>
                         </div>
                     }
                     <input type="file" name="iconFile" accept="image/png,image/jpeg,image/gif,image/webp" class="form-control js-image-input" data-preview="#sectionEditIconPreview" />
-                    <small class="text-muted">Нове зображення замінить поточну іконку.</small>
+                    <small class="text-muted">@UiText.T(currentLang, "subpost.icon_replace")</small>
                     <div id="sectionEditIconPreview" class="image-preview-grid"></div>
                 </div>
 
                 <div class="media-uploader mt-3">
-                    <h2>Добавить фото</h2>
+                    <h2>@UiText.T(currentLang, "subpost.add_photo")</h2>
                     <input type="file" name="imageFiles" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="form-control js-image-input" data-preview="#sectionEditImagePreview" />
-                    <input type="text" name="imageCaption" maxlength="240" class="form-control mt-2" placeholder="Общая подпись к новым фото" />
-                    <small class="text-muted">Новые фото добавятся в конец структуры подпоста.</small>
+                    <input type="text" name="imageCaption" maxlength="240" class="form-control mt-2" placeholder="@UiText.T(currentLang, "subpost.photo_caption")" />
+                    <small class="text-muted">@UiText.T(currentLang, "subpost.photo_hint")</small>
                     <div id="sectionEditImagePreview" class="image-preview-grid"></div>
                 </div>
 
                 <div class="media-uploader mt-3">
-                    <h2>Фото подпоста</h2>
+                    <h2>@UiText.T(currentLang, "subpost.add_files")</h2>
+                    <p>@UiText.T(currentLang, "subpost.files_hint_types")</p>
+                    <input type="file" name="attachmentFiles" accept=".pdf,.txt,.zip,.docx,.xlsx,.png,.jpg" multiple class="form-control" />
+                    <small class="text-muted">@UiText.T(currentLang, "subpost.files_hint")</small>
+                </div>
+
+                <div class="media-uploader mt-3">
+                    <h2>@UiText.T(currentLang, "subpost.files_title")</h2>
+                    @if (sectionFiles.Any())
+                    {
+                        <div class="attachment-list attachment-list-compact">
+                            @foreach (var file in sectionFiles)
+                            {
+                                <div class="attachment-item">
+                                    <span class="attachment-icon">@UiText.T(currentLang, "section.file_badge")</span>
+                                    <span class="attachment-meta">
+                                        <strong>@file.FileName</strong>
+                                        <small>@FormatFileSize(file.Size, currentLang)</small>
+                                    </span>
+                                    <button type="submit" form="deleteAttachment-@file.Id" class="btn btn-sm btn-outline-danger">@UiText.T(currentLang, "section.delete")</button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">@UiText.T(currentLang, "subpost.files_empty")</p>
+                    }
+                </div>
+
+                <div class="media-uploader mt-3">
+                    <h2>@UiText.T(currentLang, "subpost.photos_title")</h2>
                     @if (sectionImages.Any())
                     {
                         <div class="existing-media-strip">
                             @foreach (var img in sectionImages)
                             {
                                 <figure>
-                                    <img src="@Url.Content(img.ImagePath)" alt="@(string.IsNullOrWhiteSpace(img.ImageCaption) ? "Фото подпоста" : img.ImageCaption)" />
+                                    <img src="@Url.Content(img.ImagePath)" alt="@(string.IsNullOrWhiteSpace(img.ImageCaption) ? UiText.T(currentLang, "subpost.photos_title") : img.ImageCaption)" />
                                     @if (!string.IsNullOrWhiteSpace(img.ImageCaption))
                                     {
                                         <figcaption>@img.ImageCaption</figcaption>
@@ -92,22 +125,50 @@
                     }
                     else
                     {
-                        <p class="text-muted mb-0">Фото пока нет.</p>
+                        <p class="text-muted mb-0">@UiText.T(currentLang, "subpost.photos_empty")</p>
                     }
-                    <a asp-controller="PostContent" asp-action="Index" asp-route-postId="@postId" asp-route-sectionId="@sectionId" class="btn btn-sm btn-outline-primary mt-3">Открыть структуру</a>
+                    <a asp-controller="PostContent" asp-action="Index" asp-route-postId="@postId" asp-route-sectionId="@sectionId" class="btn btn-sm btn-outline-primary mt-3">@UiText.T(currentLang, "subpost.open_structure")</a>
                 </div>
             </aside>
         </div>
 
         <div class="editor-actions">
-            <button type="submit" class="btn btn-primary">Зберегти</button>
+            <button type="submit" class="btn btn-primary">@UiText.T(currentLang, "subpost.save")</button>
             <a asp-controller="PostSections" asp-action="Details"
                asp-route-postId="@postId" asp-route-id="@sectionId"
-               class="btn btn-outline-secondary">Скасувати</a>
+               class="btn btn-outline-secondary">@UiText.T(currentLang, "subpost.cancel")</a>
         </div>
     </form>
+
+    @foreach (var file in sectionFiles)
+    {
+        <form id="deleteAttachment-@file.Id"
+              asp-action="DeleteAttachment"
+              asp-route-postId="@postId"
+              asp-route-id="@sectionId"
+              asp-route-attachmentId="@file.Id"
+              method="post">
+            @Html.AntiForgeryToken()
+        </form>
+    }
 </section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+}
+
+@functions {
+    private static string FormatFileSize(long bytes, string lang)
+    {
+        const double kiloByte = 1024d;
+        const double megaByte = kiloByte * 1024d;
+
+        var mb = UiText.T(lang, "unit.mb");
+        var kb = UiText.T(lang, "unit.kb");
+
+        if (bytes >= megaByte)
+            return $"{bytes / megaByte:0.#} {mb}";
+
+        return $"{Math.Max(bytes / kiloByte, 0.1):0.#} {kb}";
+    }
 }

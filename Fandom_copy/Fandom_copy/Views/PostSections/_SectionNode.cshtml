@@ -1,6 +1,7 @@
 @using Fandom_copy.DTOs.Posts
 @model PostSectionDto
 @{
+    var currentLang = UiText.Normalize(Context.Request.Cookies[SettingsController.LangCookie]);
     var postId = (Guid)ViewData["PostId"]!;
     var depth = (int)(ViewData["Depth"] ?? 0);
     var marginLeft = depth * 12;
@@ -14,16 +15,16 @@
             <div class="btn-group btn-group-sm">
                 <a class="btn btn-outline-secondary"
                    asp-controller="PostSections" asp-action="Edit"
-                   asp-route-postId="@postId" asp-route-id="@Model.Id">Редагувати</a>
+                   asp-route-postId="@postId" asp-route-id="@Model.Id">@UiText.T(currentLang, "section.edit")</a>
                 <a class="btn btn-outline-primary"
                    asp-controller="PostSections" asp-action="Create"
-                   asp-route-postId="@postId" asp-route-parentSectionId="@Model.Id">+ Підпост</a>
+                   asp-route-postId="@postId" asp-route-parentSectionId="@Model.Id">@UiText.T(currentLang, "section.add_subpost")</a>
                 <form asp-controller="PostSections" asp-action="Delete"
                       asp-route-postId="@postId" asp-route-id="@Model.Id"
                       method="post" class="d-inline"
-                      onsubmit="return confirm('Видалити підпост і всі вкладені?');">
+                      onsubmit="return confirm('@UiText.T(currentLang, "section.delete_confirm")');">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-outline-danger">Видалити</button>
+                    <button type="submit" class="btn btn-outline-danger">@UiText.T(currentLang, "section.delete")</button>
                 </form>
             </div>
         }

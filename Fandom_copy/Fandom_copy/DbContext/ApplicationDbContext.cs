@@ -15,14 +15,17 @@ namespace Fandom_copy.Data
         public DbSet<Post> Posts => Set<Post>();
         public DbSet<PostSection> PostSections => Set<PostSection>();
         public DbSet<PostContentBlock> PostContentBlocks => Set<PostContentBlock>();
+        public DbSet<PostGalleryImage> PostGalleryImages => Set<PostGalleryImage>();
         public DbSet<PostMember> PostMembers => Set<PostMember>();
         public DbSet<SavedPost> SavedPosts => Set<SavedPost>();
         public DbSet<PostHistory> PostHistories => Set<PostHistory>();
+        public DbSet<PostVersion> PostVersions => Set<PostVersion>();
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<Tag> Tags => Set<Tag>();
         public DbSet<Images> Images => Set<Images>();
-        public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
+        public DbSet<FileAttachment> Attachments => Set<FileAttachment>();
         public DbSet<CodeBlock> CodeBlocks => Set<CodeBlock>();
+        public DbSet<PostComment> PostComments => Set<PostComment>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -36,7 +39,24 @@ namespace Fandom_copy.Data
 
             modelBuilder.Entity<Post>()
                 .HasMany(p => p.Tags)
-                .WithMany(t => t.Posts);
+                .WithMany(t => t.Posts)
+                .UsingEntity<Dictionary<string, object>>(
+                    "PostTags",
+                    right => right
+                        .HasOne<Tag>()
+                        .WithMany()
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    left => left
+                        .HasOne<Post>()
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    join =>
+                    {
+                        join.ToTable("PostTags");
+                        join.HasKey("PostId", "TagId");
+                    });
 
             modelBuilder.Entity<PostSection>()
                 .HasOne(s => s.ParentSection)
@@ -53,6 +73,27 @@ namespace Fandom_copy.Data
             modelBuilder.Entity<PostContentBlock>()
                 .HasIndex(b => new { b.PostId, b.ContainerSectionId, b.Order });
 
+            modelBuilder.Entity<PostContentBlock>()
+                .HasMany(b => b.GalleryImages)
+                .WithOne(g => g.Block!)
+                .HasForeignKey(g => g.PostContentBlockId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PostGalleryImage>()
+                .HasIndex(g => new { g.PostContentBlockId, g.Order });
+
+            modelBuilder.Entity<FileAttachment>(entity =>
+            {
+                entity.ToTable("Attachments");
+
+                entity.HasOne(a => a.PostSection)
+                    .WithMany(s => s.Files)
+                    .HasForeignKey(a => a.PostSectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(a => a.PostSectionId);
+            });
+
             modelBuilder.Entity<PostMember>()
                 .HasOne(pm => pm.User)
                 .WithMany()
@@ -64,6 +105,38 @@ namespace Fandom_copy.Data
                 .WithMany()
                 .HasForeignKey(h => h.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PostVersion>(entity =>
+            {
+                entity.HasIndex(v => new { v.PostId, v.CreatedAt });
+
+                entity.HasOne(v => v.Post)
+                    .WithMany()
+                    .HasForeignKey(v => v.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(v => v.User)
+                    .WithMany()
+                    .HasForeignKey(v => v.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<PostComment>(entity =>
+            {
+                entity.HasIndex(c => new { c.PostId, c.CreatedAt });
+
+                entity.HasOne(c => c.Post)
+                    .WithMany()
+                    .HasForeignKey(c => c.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.User)
+                    .WithMany()
+                    .HasForeignKey(c => c.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(c => c.Text).IsRequired();
+            });
 
             modelBuilder.Entity<SavedPost>(entity =>
             {

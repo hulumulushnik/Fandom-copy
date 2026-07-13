@@ -43,6 +43,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxQcm9maWxlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Account/PublicProfile.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxQdWJsaWNQcm9maWxlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Account/Register.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZWdpc3Rlci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -55,12 +59,44 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZXNldFBhc3N3b3JkLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Admin/Categories.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQ2F0ZWdvcmllcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Admin/EditCategory.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cRWRpdENhdGVnb3J5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Admin/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Admin/Posts.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cUG9zdHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Admin/Users.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cVXNlcnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Categories/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2F0ZWdvcmllc1xEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Categories/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2F0ZWdvcmllc1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Home/StatusCode.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxTdGF0dXNDb2RlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/PostContent/Index.cshtml]
@@ -109,6 +145,14 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Posts/Search.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdHNcU2VhcmNoLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Posts/Versions.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdHNcVmVyc2lvbnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Posts/_ContentBlocks.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdHNcX0NvbnRlbnRCbG9ja3MuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Settings/Index.cshtml]

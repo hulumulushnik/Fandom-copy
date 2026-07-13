@@ -5,6 +5,7 @@
     ViewData["Title"] = "Редагувати пост";
     var postId = (Guid)ViewBag.PostId;
     var rootImages = ViewBag.RootImages as List<PostContentBlockDto> ?? new List<PostContentBlockDto>();
+    var tagsValue = Model.Tags is null ? string.Empty : string.Join(", ", Model.Tags);
 }
 
 <section class="editor-page">
@@ -39,6 +40,12 @@
                         <option value="">— оберіть —</option>
                     </select>
                     <span asp-validation-for="CategoryId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label for="Tags" class="form-label">Теги (через кому)</label>
+                    <input id="Tags" name="Tags" class="form-control" value="@tagsValue" placeholder="Наприклад: survival, гайд, персонажі" />
+                    <small class="text-muted">Оновіть список тегів через кому.</small>
                 </div>
 
                 <div class="form-check mb-3">

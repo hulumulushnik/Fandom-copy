@@ -1,0 +1,51 @@
+@using Fandom_copy.DTOs.Categories
+@model List<CategoryListItemDto>
+@{
+    var currentLang = UiText.Normalize(Context.Request.Cookies[SettingsController.LangCookie]);
+    ViewData["Title"] = UiText.T(currentLang, "categories.title");
+}
+
+<div class="posts-heading">
+    <div>
+        <p class="wiki-kicker">@UiText.T(currentLang, "posts.community")</p>
+        <h1>@UiText.T(currentLang, "categories.title")</h1>
+    </div>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (TempData["Message"] is string msg)
+{
+    <div class="alert alert-success">@msg</div>
+}
+
+@if (!Model.Any())
+{
+    <div class="empty-structure">
+        <strong>@UiText.T(currentLang, "categories.empty")</strong>
+        <span>@UiText.T(currentLang, "categories.empty_hint")</span>
+    </div>
+}
+else
+{
+    <div class="categories-grid">
+        @foreach (var c in Model)
+        {
+            <a asp-controller="Categories" asp-action="Details" asp-route-id="@c.Id" class="category-card">
+                <div class="category-card-icon">
+                    <span class="wiki-topic-placeholder">@c.Name.Substring(0, 1).ToUpper()</span>
+                </div>
+                <div class="category-card-body">
+                    <h5>@c.Name</h5>
+                    @if (!string.IsNullOrWhiteSpace(c.Description))
+                    {
+                        <p class="category-card-desc">@c.Description</p>
+                    }
+                    <span class="post-tag">@c.PostCount @UiText.T(currentLang, "posts.count_suffix")</span>
+                </div>
+            </a>
+        }
+    </div>
+}

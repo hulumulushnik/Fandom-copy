@@ -1,0 +1,83 @@
+@model Fandom_copy.DTOs.Admin.AdminCategoriesViewModel
+@{
+    ViewData["Title"] = "Категорії";
+}
+
+<section class="profile-shell admin-shell">
+    <div class="wiki-back">
+        <a asp-action="Index">← Адмінка</a>
+    </div>
+
+    <div class="posts-heading">
+        <div>
+            <p class="wiki-kicker">Структура вікі</p>
+            <h1>Категорії</h1>
+        </div>
+    </div>
+
+    @if (TempData["Error"] is string err)
+    {
+        <div class="alert alert-danger">@err</div>
+    }
+    @if (TempData["Message"] is string msg)
+    {
+        <div class="alert alert-success">@msg</div>
+    }
+
+    <article class="profile-card admin-form-card">
+        <h2>Створити категорію</h2>
+        <form asp-action="CreateCategory" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="form-error"></div>
+            <label asp-for="Form.Name">Назва</label>
+            <input asp-for="Form.Name" />
+            <span asp-validation-for="Form.Name" class="form-error"></span>
+            <label asp-for="Form.Description">Опис</label>
+            <textarea asp-for="Form.Description" rows="3"></textarea>
+            <span asp-validation-for="Form.Description" class="form-error"></span>
+            <button type="submit" class="primary-btn">Створити</button>
+        </form>
+    </article>
+
+    @if (!Model.Categories.Any())
+    {
+        <div class="empty-structure">
+            <strong>Категорій ще немає</strong>
+            <span>Створіть першу категорію для групування постів.</span>
+        </div>
+    }
+    else
+    {
+        <div class="posts-list admin-list-with-form">
+            @foreach (var category in Model.Categories)
+            {
+                <div class="post-row admin-row">
+                    <div class="post-row-thumb">
+                        <span class="wiki-topic-placeholder">@category.Name[..1].ToUpper()</span>
+                    </div>
+                    <div class="post-row-body">
+                        <div class="post-row-top">
+                            <h5>@category.Name</h5>
+                            <small class="post-row-date">@category.PostCount постів</small>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(category.Description))
+                        {
+                            <p class="post-row-desc">@category.Description</p>
+                        }
+                    </div>
+                    <div class="admin-row-actions">
+                        <a asp-action="EditCategory" asp-route-id="@category.Id" class="secondary-btn">Редагувати</a>
+                        <form asp-action="DeleteCategory" asp-route-id="@category.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="secondary-btn admin-danger-btn">Видалити</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

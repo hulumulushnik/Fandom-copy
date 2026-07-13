@@ -17,13 +17,17 @@ namespace Fandom_copy.Controllers
         private readonly IPostService _postService;
         private readonly ApplicationDbContext _db;
         private readonly IPostImageStorage _imageStorage;
+        private readonly IPostFileStorage _fileStorage;
+        private readonly IPostVersionService _versions;
 
-        public PostSectionsController(IPostSectionService sectionService, IPostService postService, ApplicationDbContext db, IPostImageStorage imageStorage)
+        public PostSectionsController(IPostSectionService sectionService, IPostService postService, ApplicationDbContext db, IPostImageStorage imageStorage, IPostFileStorage fileStorage, IPostVersionService versions)
         {
             _sectionService = sectionService;
             _postService = postService;
             _db = db;
             _imageStorage = imageStorage;
+            _fileStorage = fileStorage;
+            _versions = versions;
         }
 
         // GET /posts/{postId}/sections/{id}
@@ -99,7 +103,7 @@ namespace Fandom_copy.Controllers
         [HttpPost("create")]
         [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Guid postId, CreatePostSectionDto dto, List<IFormFile>? imageFiles, string? imageCaption, IFormFile? iconFile)
+        public async Task<IActionResult> Create(Guid postId, CreatePostSectionDto dto, List<IFormFile>? imageFiles, string? imageCaption, IFormFile? iconFile, List<IFormFile>? attachmentFiles)
         {
             // ЗАВЖДИ виставляємо PostId з роуту, щоб не довіряти прихованому полю.
             dto.PostId = postId;
@@ -132,6 +136,13 @@ namespace Fandom_copy.Controllers
                 var iconResult = await SetSectionIconAsync(postId, result.Data!.Id, iconFile, removeIcon: false);
                 if (!iconResult.Success)
                     TempData["Error"] = iconResult.Error;
+            }
+
+            if (attachmentFiles is { Count: > 0 })
+            {
+                var fileResult = await AppendSectionFilesAsync(postId, result.Data!.Id, attachmentFiles);
+                if (!fileResult.Success)
+                    TempData["Error"] = fileResult.Error;
             }
 
             // Після створення відкриваємо сторінку самого підпоста, як у Fandom.
@@ -172,6 +183,7 @@ namespace Fandom_copy.Controllers
             ViewBag.SectionImages = result.Data.ContentBlocks
                 .Where(b => b.Type == PostContentBlockType.Image)
                 .ToList();
+            ViewBag.SectionFiles = result.Data.Attachments;
             return View(dto);
         }
 
@@ -179,7 +191,7 @@ namespace Fandom_copy.Controllers
         [HttpPost("{id:guid}/edit")]
         [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid postId, Guid id, UpdatePostSectionDto dto, List<IFormFile>? imageFiles, string? imageCaption, IFormFile? iconFile, bool removeIcon = false)
+        public async Task<IActionResult> Edit(Guid postId, Guid id, UpdatePostSectionDto dto, List<IFormFile>? imageFiles, string? imageCaption, IFormFile? iconFile, List<IFormFile>? attachmentFiles, bool removeIcon = false)
         {
             if (!ModelState.IsValid)
             {
@@ -213,6 +225,13 @@ namespace Fandom_copy.Controllers
                     TempData["Error"] = iconResult.Error;
             }
 
+            if (attachmentFiles is { Count: > 0 })
+            {
+                var fileResult = await AppendSectionFilesAsync(postId, id, attachmentFiles);
+                if (!fileResult.Success)
+                    TempData["Error"] = fileResult.Error;
+            }
+
             return RedirectToAction(nameof(Details), new { postId, id });
         }
 
@@ -231,6 +250,48 @@ namespace Fandom_copy.Controllers
                 TempData["Message"] = "Підпост видалено";
 
             return RedirectToAction("Details", "Posts", new { id = postId });
+        }
+
+        // POST /posts/{postId}/sections/{id}/attachments/{attachmentId}/delete
+        [HttpPost("{id:guid}/attachments/{attachmentId:guid}/delete")]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAttachment(Guid postId, Guid id, Guid attachmentId)
+        {
+            var userId = GetCurrentUserId();
+            var postResult = await _postService.GetByIdAsync(postId, userId);
+            if (!postResult.Success || !postResult.Data!.CanEdit)
+            {
+                TempData["Error"] = postResult.Success ? "Немає прав на редагування" : postResult.Error;
+                return RedirectToAction(nameof(Details), new { postId, id });
+            }
+
+            var attachment = await _db.Attachments
+                .Include(a => a.PostSection)
+                .FirstOrDefaultAsync(a => a.Id == attachmentId && a.PostSectionId == id && a.PostSection.PostId == postId);
+
+            if (attachment is null)
+            {
+                TempData["Error"] = "Файл не знайдено";
+                return RedirectToAction(nameof(Edit), new { postId, id });
+            }
+
+            var snapshot = await _versions.CaptureAsync(postId, userId, "AttachmentDeleted");
+            if (!snapshot.Success)
+            {
+                TempData["Error"] = snapshot.Error;
+                return RedirectToAction(nameof(Edit), new { postId, id });
+            }
+
+            _db.Attachments.Remove(attachment);
+
+            var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == postId && !p.IsDeleted);
+            if (post is not null)
+                post.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+            TempData["Message"] = "Файл видалено";
+            return RedirectToAction(nameof(Edit), new { postId, id });
         }
 
         private Guid GetCurrentUserId()
@@ -253,9 +314,6 @@ namespace Fandom_copy.Controllers
 
             if (removeIcon)
             {
-                if (!string.IsNullOrWhiteSpace(section.IconPath))
-                    _imageStorage.Delete(section.IconPath);
-
                 section.IconPath = null;
                 await _db.SaveChangesAsync();
                 return ServiceResult.Ok();
@@ -264,9 +322,6 @@ namespace Fandom_copy.Controllers
             var saved = await _imageStorage.SaveAsync(postId, iconFile);
             if (!saved.Success)
                 return ServiceResult.Fail(saved.Error ?? "Не вдалося завантажити іконку");
-
-            if (!string.IsNullOrWhiteSpace(section.IconPath))
-                _imageStorage.Delete(section.IconPath);
 
             section.IconPath = saved.RelativePath;
             await _db.SaveChangesAsync();
@@ -313,6 +368,53 @@ namespace Fandom_copy.Controllers
             post.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return ServiceResult.Ok();
+        }
+
+        private async Task<ServiceResult> AppendSectionFilesAsync(Guid postId, Guid sectionId, List<IFormFile> attachmentFiles)
+        {
+            var files = attachmentFiles.Where(f => f is not null && f.Length > 0).ToList();
+            if (files.Count == 0)
+                return ServiceResult.Ok();
+
+            var sectionExists = await _db.PostSections.AnyAsync(s => s.Id == sectionId && s.PostId == postId);
+            if (!sectionExists)
+                return ServiceResult.Fail("Підпост не знайдено");
+
+            var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == postId && !p.IsDeleted);
+            if (post is null)
+                return ServiceResult.Fail("Пост не знайдено");
+
+            foreach (var file in files)
+            {
+                var saved = await _fileStorage.SaveAsync(postId, file);
+                if (!saved.Success)
+                    return ServiceResult.Fail(saved.Error ?? "Не вдалося завантажити файл");
+
+                _db.Attachments.Add(new FileAttachment
+                {
+                    Id = Guid.NewGuid(),
+                    FileName = GetSafeOriginalFileName(file.FileName),
+                    Path = saved.RelativePath!,
+                    Size = file.Length,
+                    PostSectionId = sectionId
+                });
+            }
+
+            post.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            return ServiceResult.Ok();
+        }
+
+        private static string GetSafeOriginalFileName(string fileName)
+        {
+            var normalized = (fileName ?? string.Empty).Replace('\\', '/');
+            var safeName = Path.GetFileName(normalized);
+
+            if (!string.IsNullOrWhiteSpace(safeName))
+                return safeName;
+
+            var extension = Path.GetExtension(fileName);
+            return $"attachment{extension.ToLowerInvariant()}";
         }
     }
 }
