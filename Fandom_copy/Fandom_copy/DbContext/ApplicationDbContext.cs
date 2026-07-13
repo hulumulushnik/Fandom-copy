@@ -15,6 +15,7 @@ namespace Fandom_copy.Data
         public DbSet<Post> Posts => Set<Post>();
         public DbSet<PostSection> PostSections => Set<PostSection>();
         public DbSet<PostContentBlock> PostContentBlocks => Set<PostContentBlock>();
+        public DbSet<PostGalleryImage> PostGalleryImages => Set<PostGalleryImage>();
         public DbSet<PostMember> PostMembers => Set<PostMember>();
         public DbSet<SavedPost> SavedPosts => Set<SavedPost>();
         public DbSet<PostHistory> PostHistories => Set<PostHistory>();
@@ -70,6 +71,15 @@ namespace Fandom_copy.Data
 
             modelBuilder.Entity<PostContentBlock>()
                 .HasIndex(b => new { b.PostId, b.ContainerSectionId, b.Order });
+
+            modelBuilder.Entity<PostContentBlock>()
+                .HasMany(b => b.GalleryImages)
+                .WithOne(g => g.Block!)
+                .HasForeignKey(g => g.PostContentBlockId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PostGalleryImage>()
+                .HasIndex(g => new { g.PostContentBlockId, g.Order });
 
             modelBuilder.Entity<FileAttachment>(entity =>
             {

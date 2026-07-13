@@ -220,6 +220,100 @@ using (var scope = app.Services.CreateScope())
             ALTER TABLE [dbo].[Users]
                 ADD [ProfileFrame] int NOT NULL CONSTRAINT [DF_Users_ProfileFrame] DEFAULT (0);
         END
+        -- Extended text formatting columns for PostContentBlocks.
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'TextBold') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [TextBold] bit NOT NULL CONSTRAINT [DF_PostContentBlocks_TextBold] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'TextItalic') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [TextItalic] bit NOT NULL CONSTRAINT [DF_PostContentBlocks_TextItalic] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'TextUnderline') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [TextUnderline] bit NOT NULL CONSTRAINT [DF_PostContentBlocks_TextUnderline] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'TextStrike') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [TextStrike] bit NOT NULL CONSTRAINT [DF_PostContentBlocks_TextStrike] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'TextSize') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [TextSize] int NOT NULL CONSTRAINT [DF_PostContentBlocks_TextSize] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'TextAlign') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [TextAlign] int NOT NULL CONSTRAINT [DF_PostContentBlocks_TextAlign] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'TextStyle') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [TextStyle] int NOT NULL CONSTRAINT [DF_PostContentBlocks_TextStyle] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'TextColor') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [TextColor] nvarchar(32) NOT NULL CONSTRAINT [DF_PostContentBlocks_TextColor] DEFAULT (N'');
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'SectionDisplayStyle') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [SectionDisplayStyle] int NOT NULL CONSTRAINT [DF_PostContentBlocks_SectionDisplayStyle] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'SectionLinkText') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [SectionLinkText] nvarchar(240) NOT NULL CONSTRAINT [DF_PostContentBlocks_SectionLinkText] DEFAULT (N'');
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'TemplateType') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [TemplateType] int NOT NULL CONSTRAINT [DF_PostContentBlocks_TemplateType] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'GalleryStyle') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [GalleryStyle] int NOT NULL CONSTRAINT [DF_PostContentBlocks_GalleryStyle] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[PostContentBlocks]', N'GalleryCaption') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[PostContentBlocks]
+                ADD [GalleryCaption] nvarchar(240) NOT NULL CONSTRAINT [DF_PostContentBlocks_GalleryCaption] DEFAULT (N'');
+        END
+        IF OBJECT_ID(N'[dbo].[PostGalleryImages]', N'U') IS NULL
+           AND OBJECT_ID(N'[dbo].[PostContentBlocks]', N'U') IS NOT NULL
+        BEGIN
+            CREATE TABLE [dbo].[PostGalleryImages] (
+                [Id] uniqueidentifier NOT NULL PRIMARY KEY,
+                [PostContentBlockId] uniqueidentifier NOT NULL,
+                [ImagePath] nvarchar(max) NOT NULL DEFAULT N'',
+                [Caption] nvarchar(240) NOT NULL DEFAULT N'',
+                [Order] int NOT NULL DEFAULT 0,
+                CONSTRAINT [FK_PostGalleryImages_PostContentBlocks]
+                    FOREIGN KEY ([PostContentBlockId]) REFERENCES [dbo].[PostContentBlocks] ([Id]) ON DELETE CASCADE
+            );
+            CREATE INDEX [IX_PostGalleryImages_PostContentBlockId_Order]
+                ON [dbo].[PostGalleryImages] ([PostContentBlockId], [Order]);
+        END
         """);
     if (!db.Categories.Any())
     {

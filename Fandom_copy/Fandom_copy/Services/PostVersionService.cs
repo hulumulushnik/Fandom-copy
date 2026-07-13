@@ -86,6 +86,10 @@ public sealed class PostVersionService : IPostVersionService
                 .Contains(a.PostSectionId))
             .ExecuteDeleteAsync();
 
+        await _db.PostGalleryImages
+            .Where(g => _db.PostContentBlocks.Where(b => b.PostId == postId).Select(b => b.Id).Contains(g.PostContentBlockId))
+            .ExecuteDeleteAsync();
+
         await _db.PostContentBlocks
             .Where(b => b.PostId == postId)
             .ExecuteDeleteAsync();
@@ -151,7 +155,28 @@ public sealed class PostVersionService : IPostVersionService
             ImagePath = b.ImagePath,
             ImageCaption = b.ImageCaption,
             SectionId = b.SectionId,
-            Order = b.Order
+            Order = b.Order,
+            TextBold = b.TextBold,
+            TextItalic = b.TextItalic,
+            TextUnderline = b.TextUnderline,
+            TextStrike = b.TextStrike,
+            TextSize = b.TextSize,
+            TextAlign = b.TextAlign,
+            TextStyle = b.TextStyle,
+            TextColor = b.TextColor ?? string.Empty,
+            SectionDisplayStyle = b.SectionDisplayStyle,
+            SectionLinkText = b.SectionLinkText ?? string.Empty,
+            TemplateType = b.TemplateType,
+            GalleryStyle = b.GalleryStyle,
+            GalleryCaption = b.GalleryCaption ?? string.Empty,
+            GalleryImages = (b.GalleryImages ?? new List<GalleryImageSnapshot>()).Select(g => new PostGalleryImage
+            {
+                Id = g.Id,
+                PostContentBlockId = b.Id,
+                ImagePath = g.ImagePath,
+                Caption = g.Caption,
+                Order = g.Order
+            }).ToList()
         }));
 
         _db.Attachments.AddRange(snapshot.Attachments.Select(a => new FileAttachment
@@ -197,6 +222,7 @@ public sealed class PostVersionService : IPostVersionService
 
         var blocks = await _db.PostContentBlocks
             .AsNoTracking()
+            .Include(b => b.GalleryImages)
             .Where(b => b.PostId == postId)
             .OrderBy(b => b.ContainerSectionId)
             .ThenBy(b => b.Order)
@@ -236,7 +262,29 @@ public sealed class PostVersionService : IPostVersionService
                 ImagePath = b.ImagePath,
                 ImageCaption = b.ImageCaption,
                 SectionId = b.SectionId,
-                Order = b.Order
+                Order = b.Order,
+                TextBold = b.TextBold,
+                TextItalic = b.TextItalic,
+                TextUnderline = b.TextUnderline,
+                TextStrike = b.TextStrike,
+                TextSize = b.TextSize,
+                TextAlign = b.TextAlign,
+                TextStyle = b.TextStyle,
+                TextColor = b.TextColor,
+                SectionDisplayStyle = b.SectionDisplayStyle,
+                SectionLinkText = b.SectionLinkText,
+                TemplateType = b.TemplateType,
+                GalleryStyle = b.GalleryStyle,
+                GalleryCaption = b.GalleryCaption,
+                GalleryImages = (b.GalleryImages ?? new List<PostGalleryImage>())
+                    .OrderBy(g => g.Order)
+                    .Select(g => new GalleryImageSnapshot
+                    {
+                        Id = g.Id,
+                        ImagePath = g.ImagePath,
+                        Caption = g.Caption,
+                        Order = g.Order
+                    }).ToList()
             }).ToList(),
             Attachments = attachments.Select(a => new AttachmentSnapshot
             {
@@ -355,6 +403,28 @@ public sealed class PostVersionService : IPostVersionService
         public string ImagePath { get; set; } = string.Empty;
         public string ImageCaption { get; set; } = string.Empty;
         public Guid? SectionId { get; set; }
+        public int Order { get; set; }
+        public bool TextBold { get; set; }
+        public bool TextItalic { get; set; }
+        public bool TextUnderline { get; set; }
+        public bool TextStrike { get; set; }
+        public PostTextSize TextSize { get; set; }
+        public PostTextAlign TextAlign { get; set; }
+        public PostTextStyle TextStyle { get; set; }
+        public string TextColor { get; set; } = string.Empty;
+        public PostSectionDisplayStyle SectionDisplayStyle { get; set; }
+        public string SectionLinkText { get; set; } = string.Empty;
+        public PostBlockTemplateType TemplateType { get; set; }
+        public PostGalleryStyle GalleryStyle { get; set; }
+        public string GalleryCaption { get; set; } = string.Empty;
+        public List<GalleryImageSnapshot> GalleryImages { get; set; } = new();
+    }
+
+    private sealed class GalleryImageSnapshot
+    {
+        public Guid Id { get; set; }
+        public string ImagePath { get; set; } = string.Empty;
+        public string Caption { get; set; } = string.Empty;
         public int Order { get; set; }
     }
 

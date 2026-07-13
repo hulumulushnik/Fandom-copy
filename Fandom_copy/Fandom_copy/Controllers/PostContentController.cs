@@ -64,6 +64,50 @@ public class PostContentController : Controller
             ContainerSectionId = sectionId,
             Type = PostContentBlockType.Text,
             Text = dto.NewText.Trim(),
+            TextBold = dto.NewTextBold,
+            TextItalic = dto.NewTextItalic,
+            TextUnderline = dto.NewTextUnderline,
+            TextStrike = dto.NewTextStrike,
+            TextSize = dto.NewTextSize,
+            TextAlign = dto.NewTextAlign,
+            TextStyle = dto.NewTextStyle,
+            TextColor = PostContentFormatting.SanitizeColor(dto.NewTextColor),
+            Order = await GetNextOrderAsync(postId, sectionId)
+        });
+
+        post.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return RedirectToEditor(postId, sectionId);
+    }
+
+    [HttpPost("template")]
+    [HttpPost("sections/{sectionId:guid}/template")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddTemplate(Guid postId, Guid? sectionId, PostBlockTemplateType templateType, string? text)
+    {
+        var post = await GetEditablePost(postId);
+        if (post is null) return RedirectToAction("Details", "Posts", new { id = postId });
+        if (templateType == PostBlockTemplateType.None)
+        {
+            TempData["Error"] = "Выберите шаблон.";
+            return RedirectToEditor(postId, sectionId);
+        }
+
+        var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentTemplateAdded");
+        if (!snapshot.Success)
+        {
+            TempData["Error"] = snapshot.Error;
+            return RedirectToEditor(postId, sectionId);
+        }
+
+        _db.PostContentBlocks.Add(new PostContentBlock
+        {
+            Id = Guid.NewGuid(),
+            PostId = postId,
+            ContainerSectionId = sectionId,
+            Type = PostContentBlockType.Template,
+            TemplateType = templateType,
+            Text = (text ?? DefaultTemplateText(templateType)).Trim(),
             Order = await GetNextOrderAsync(postId, sectionId)
         });
 
@@ -124,10 +168,142 @@ public class PostContentController : Controller
         return RedirectToEditor(postId, sectionId);
     }
 
+    [HttpPost("gallery")]
+    [HttpPost("sections/{sectionId:guid}/gallery")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddGallery(Guid postId, Guid? sectionId, PostContentEditorDto dto, List<IFormFile>? galleryFiles)
+    {
+        var post = await GetEditablePost(postId);
+        if (post is null) return RedirectToAction("Details", "Posts", new { id = postId });
+
+        var files = galleryFiles?.Where(f => f is not null && f.Length > 0).ToList() ?? new List<IFormFile>();
+        if (files.Count == 0)
+        {
+            TempData["Error"] = "Выберите хотя бы одно изображение для галереи.";
+            return RedirectToEditor(postId, sectionId);
+        }
+
+        var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentGalleryAdded");
+        if (!snapshot.Success)
+        {
+            TempData["Error"] = snapshot.Error;
+            return RedirectToEditor(postId, sectionId);
+        }
+
+        var blockId = Guid.NewGuid();
+        var block = new PostContentBlock
+        {
+            Id = blockId,
+            PostId = postId,
+            ContainerSectionId = sectionId,
+            Type = PostContentBlockType.Gallery,
+            GalleryStyle = dto.NewGalleryStyle,
+            GalleryCaption = (dto.NewGalleryCaption ?? string.Empty).Trim(),
+            Order = await GetNextOrderAsync(postId, sectionId)
+        };
+
+        var order = 0;
+        foreach (var file in files)
+        {
+            var saved = await _imageStorage.SaveAsync(postId, file);
+            if (!saved.Success)
+            {
+                TempData["Error"] = saved.Error;
+                return RedirectToEditor(postId, sectionId);
+            }
+            block.GalleryImages.Add(new PostGalleryImage
+            {
+                Id = Guid.NewGuid(),
+                PostContentBlockId = blockId,
+                ImagePath = saved.RelativePath!,
+                Caption = string.Empty,
+                Order = order++
+            });
+        }
+
+        _db.PostContentBlocks.Add(block);
+        post.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return RedirectToEditor(postId, sectionId);
+    }
+
+    [HttpPost("{id:guid}/gallery")]
+    [HttpPost("sections/{sectionId:guid}/{id:guid}/gallery")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateGallery(Guid postId, Guid? sectionId, Guid id, string? galleryCaption, PostGalleryStyle galleryStyle, string? orderedImageIds)
+    {
+        var post = await GetEditablePost(postId);
+        if (post is null) return RedirectToAction("Details", "Posts", new { id = postId });
+
+        var block = await _db.PostContentBlocks
+            .Include(b => b.GalleryImages)
+            .FirstOrDefaultAsync(b => b.Id == id && b.PostId == postId && b.ContainerSectionId == sectionId && b.Type == PostContentBlockType.Gallery);
+        if (block is null) return RedirectToEditor(postId, sectionId);
+
+        var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentGalleryUpdated");
+        if (!snapshot.Success)
+        {
+            TempData["Error"] = snapshot.Error;
+            return RedirectToEditor(postId, sectionId);
+        }
+
+        block.GalleryCaption = ((galleryCaption ?? string.Empty).Trim());
+        if (block.GalleryCaption.Length > 240) block.GalleryCaption = block.GalleryCaption[..240];
+        block.GalleryStyle = galleryStyle;
+
+        if (!string.IsNullOrWhiteSpace(orderedImageIds))
+        {
+            var ids = orderedImageIds
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => Guid.TryParse(s, out var g) ? g : (Guid?)null)
+                .Where(g => g.HasValue)
+                .Select(g => g!.Value)
+                .ToList();
+
+            for (var i = 0; i < ids.Count; i++)
+            {
+                var img = block.GalleryImages.FirstOrDefault(g => g.Id == ids[i]);
+                if (img is not null) img.Order = i;
+            }
+        }
+
+        post.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return RedirectToEditor(postId, sectionId);
+    }
+
+    [HttpPost("{id:guid}/gallery/{imageId:guid}/delete")]
+    [HttpPost("sections/{sectionId:guid}/{id:guid}/gallery/{imageId:guid}/delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteGalleryImage(Guid postId, Guid? sectionId, Guid id, Guid imageId)
+    {
+        var post = await GetEditablePost(postId);
+        if (post is null) return RedirectToAction("Details", "Posts", new { id = postId });
+
+        var image = await _db.PostGalleryImages
+            .Include(g => g.Block)
+            .FirstOrDefaultAsync(g => g.Id == imageId && g.PostContentBlockId == id);
+
+        if (image?.Block is null || image.Block.PostId != postId || image.Block.ContainerSectionId != sectionId)
+            return RedirectToEditor(postId, sectionId);
+
+        var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentGalleryImageDeleted");
+        if (!snapshot.Success)
+        {
+            TempData["Error"] = snapshot.Error;
+            return RedirectToEditor(postId, sectionId);
+        }
+
+        _db.PostGalleryImages.Remove(image);
+        post.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return RedirectToEditor(postId, sectionId);
+    }
+
     [HttpPost("section")]
     [HttpPost("sections/{sectionId:guid}/section")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddExistingSection(Guid postId, Guid? sectionId, Guid linkedSectionId)
+    public async Task<IActionResult> AddExistingSection(Guid postId, Guid? sectionId, Guid linkedSectionId, PostSectionDisplayStyle displayStyle, string? linkText)
     {
         var post = await GetEditablePost(postId);
         if (post is null) return RedirectToAction("Details", "Posts", new { id = postId });
@@ -168,6 +344,8 @@ public class PostContentController : Controller
             ContainerSectionId = sectionId,
             Type = PostContentBlockType.Section,
             SectionId = linkedSectionId,
+            SectionDisplayStyle = displayStyle,
+            SectionLinkText = TruncateLinkText(linkText),
             Order = await GetNextOrderAsync(postId, sectionId)
         });
 
@@ -176,10 +354,39 @@ public class PostContentController : Controller
         return RedirectToEditor(postId, sectionId);
     }
 
+    [HttpPost("{id:guid}/section-display")]
+    [HttpPost("sections/{sectionId:guid}/{id:guid}/section-display")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateSectionDisplay(Guid postId, Guid? sectionId, Guid id, PostSectionDisplayStyle displayStyle, string? linkText)
+    {
+        var post = await GetEditablePost(postId);
+        if (post is null) return RedirectToAction("Details", "Posts", new { id = postId });
+
+        var block = await _db.PostContentBlocks.FirstOrDefaultAsync(b =>
+            b.Id == id && b.PostId == postId && b.ContainerSectionId == sectionId && b.Type == PostContentBlockType.Section);
+
+        if (block is not null)
+        {
+            var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentSectionDisplayUpdated");
+            if (!snapshot.Success)
+            {
+                TempData["Error"] = snapshot.Error;
+                return RedirectToEditor(postId, sectionId);
+            }
+
+            block.SectionDisplayStyle = displayStyle;
+            block.SectionLinkText = TruncateLinkText(linkText);
+            post.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
+
+        return RedirectToEditor(postId, sectionId);
+    }
+
     [HttpPost("{id:guid}/text")]
     [HttpPost("sections/{sectionId:guid}/{id:guid}/text")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateText(Guid postId, Guid? sectionId, Guid id, string text)
+    public async Task<IActionResult> UpdateText(Guid postId, Guid? sectionId, Guid id, string text, PostContentEditorDto dto)
     {
         var post = await GetEditablePost(postId);
         if (post is null) return RedirectToAction("Details", "Posts", new { id = postId });
@@ -190,7 +397,8 @@ public class PostContentController : Controller
         }
 
         var block = await _db.PostContentBlocks.FirstOrDefaultAsync(b =>
-            b.Id == id && b.PostId == postId && b.ContainerSectionId == sectionId && b.Type == PostContentBlockType.Text);
+            b.Id == id && b.PostId == postId && b.ContainerSectionId == sectionId &&
+            (b.Type == PostContentBlockType.Text || b.Type == PostContentBlockType.Template));
 
         if (block is not null)
         {
@@ -202,6 +410,14 @@ public class PostContentController : Controller
             }
 
             block.Text = text.Trim();
+            block.TextBold = dto.NewTextBold;
+            block.TextItalic = dto.NewTextItalic;
+            block.TextUnderline = dto.NewTextUnderline;
+            block.TextStrike = dto.NewTextStrike;
+            block.TextSize = dto.NewTextSize;
+            block.TextAlign = dto.NewTextAlign;
+            block.TextStyle = dto.NewTextStyle;
+            block.TextColor = PostContentFormatting.SanitizeColor(dto.NewTextColor);
             post.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
         }
@@ -272,6 +488,54 @@ public class PostContentController : Controller
         return RedirectToEditor(postId, sectionId);
     }
 
+    [HttpPost("reorder")]
+    [HttpPost("sections/{sectionId:guid}/reorder")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Reorder(Guid postId, Guid? sectionId, [FromForm] string orderedIds)
+    {
+        var isXhr = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+        var post = await GetEditablePost(postId);
+        if (post is null)
+            return isXhr ? Json(new { success = false, error = "Нет прав." }) : RedirectToAction("Details", "Posts", new { id = postId });
+
+        var ids = (orderedIds ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(s => Guid.TryParse(s, out var g) ? g : (Guid?)null)
+            .Where(g => g.HasValue)
+            .Select(g => g!.Value)
+            .ToList();
+
+        var blocks = await _db.PostContentBlocks
+            .Where(b => b.PostId == postId && b.ContainerSectionId == sectionId)
+            .ToListAsync();
+
+        if (ids.Count == 0 || ids.Count != blocks.Count || !ids.All(id => blocks.Any(b => b.Id == id)))
+        {
+            TempData["Error"] = "Некорректный порядок блоков.";
+            return isXhr ? Json(new { success = false, error = TempData["Error"] }) : RedirectToEditor(postId, sectionId);
+        }
+
+        var snapshot = await _versions.CaptureAsync(postId, GetCurrentUserId(), "ContentBlocksReordered");
+        if (!snapshot.Success)
+        {
+            TempData["Error"] = snapshot.Error;
+            return isXhr ? Json(new { success = false, error = snapshot.Error }) : RedirectToEditor(postId, sectionId);
+        }
+
+        for (var i = 0; i < ids.Count; i++)
+        {
+            var block = blocks.First(b => b.Id == ids[i]);
+            block.Order = i;
+        }
+
+        post.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        if (isXhr)
+            return Json(new { success = true });
+        return RedirectToEditor(postId, sectionId);
+    }
+
     [HttpPost("{id:guid}/delete")]
     [HttpPost("sections/{sectionId:guid}/{id:guid}/delete")]
     [ValidateAntiForgeryToken]
@@ -323,6 +587,7 @@ public class PostContentController : Controller
     {
         var blocks = await _db.PostContentBlocks
             .Include(b => b.Section)
+            .Include(b => b.GalleryImages)
             .Where(b => b.PostId == postId && b.ContainerSectionId == sectionId)
             .OrderBy(b => b.Order)
             .ToListAsync();
@@ -375,6 +640,24 @@ public class PostContentController : Controller
         for (var i = 0; i < blocks.Count; i++)
             blocks[i].Order = i;
     }
+
+    private static string TruncateLinkText(string? text)
+    {
+        var value = (text ?? string.Empty).Trim();
+        return value.Length > 240 ? value[..240] : value;
+    }
+
+    private static string DefaultTemplateText(PostBlockTemplateType type) => type switch
+    {
+        PostBlockTemplateType.InfoBox => "Информация. Краткое пояснение или контекст.",
+        PostBlockTemplateType.Warning => "Внимание! Опишите важное предупреждение.",
+        PostBlockTemplateType.Quote => "«Впишите цитату сюда». — Автор",
+        PostBlockTemplateType.Divider => "---",
+        PostBlockTemplateType.FactCard => "Факт: краткое утверждение, которое стоит запомнить.",
+        PostBlockTemplateType.LoreBlock => "Лор: описание истории или предыстории мира.",
+        PostBlockTemplateType.CharacterStats => "Имя: —\nРаса: —\nКласс: —\nСила: —\nЛовкость: —\nИнтеллект: —",
+        _ => string.Empty
+    };
 
     private IActionResult RedirectToEditor(Guid postId, Guid? sectionId) =>
         sectionId is null

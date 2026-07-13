@@ -45,6 +45,7 @@ namespace Fandom_copy.Services
             var dto = PostSectionDto.FromEntity(section, includeSubSections: true);
             var contentBlocks = await _db.PostContentBlocks
                 .Include(b => b.Section)
+                .Include(b => b.GalleryImages)
                 .Where(b => b.ContainerSectionId == section.Id)
                 .OrderBy(b => b.Order)
                 .ToListAsync();

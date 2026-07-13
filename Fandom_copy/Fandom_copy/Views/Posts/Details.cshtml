@@ -1,5 +1,6 @@
 @using Fandom_copy.DTOs.Posts
 @using Fandom_copy.Models
+@using Fandom_copy.Services
 @model PostDto
 @{
     ViewData["Title"] = Model.Title;
@@ -115,60 +116,12 @@
     var orderedBlocks = Model.ContentBlocks.OrderBy(b => b.Order).ToList();
     <article class="wiki-content">
         @{
-            var blockIndex = 0;
-            while (blockIndex < orderedBlocks.Count)
-            {
-                var block = orderedBlocks[blockIndex];
-                if (block.Type == PostContentBlockType.Text)
-                {
-                    <div class="wiki-copy">@block.Text</div>
-                    blockIndex++;
-                }
-                else if (block.Type == PostContentBlockType.Image && !string.IsNullOrWhiteSpace(block.ImagePath))
-                {
-                    <figure class="wiki-image-block">
-                        <img src="@Url.Content(block.ImagePath)" alt="@(string.IsNullOrWhiteSpace(block.ImageCaption) ? Model.Title : block.ImageCaption)" />
-                        @if (!string.IsNullOrWhiteSpace(block.ImageCaption))
-                        {
-                            <figcaption>@block.ImageCaption</figcaption>
-                        }
-                    </figure>
-                    blockIndex++;
-                }
-                else if (block.SectionId is Guid)
-                {
-                    <div class="wiki-topic-grid">
-                        @while (blockIndex < orderedBlocks.Count
-                            && orderedBlocks[blockIndex].Type != PostContentBlockType.Text
-                            && !(orderedBlocks[blockIndex].Type == PostContentBlockType.Image && !string.IsNullOrWhiteSpace(orderedBlocks[blockIndex].ImagePath))
-                            && orderedBlocks[blockIndex].SectionId is Guid)
-                        {
-                            var topicBlock = orderedBlocks[blockIndex];
-                            var topicSectionId = topicBlock.SectionId!.Value;
-                            var section = sectionLookup.GetValueOrDefault(topicSectionId);
-                            <a class="wiki-topic-card" asp-controller="PostSections" asp-action="Details" asp-route-postId="@Model.Id" asp-route-id="@topicSectionId">
-                                <span class="wiki-topic-art">
-                                    @if (!string.IsNullOrWhiteSpace(section?.IconPath ?? section?.PrimaryImagePath))
-                                    {
-                                        <img src="@Url.Content(section.IconPath ?? section.PrimaryImagePath)" alt="@topicBlock.SectionTitle" />
-                                    }
-                                    else
-                                    {
-                                        <span class="wiki-topic-placeholder">!</span>
-                                    }
-                                </span>
-                                <strong>@(topicBlock.SectionTitle ?? "Под-пост")</strong>
-                                <small>Открыть под-пост →</small>
-                            </a>
-                            blockIndex++;
-                        }
-                    </div>
-                }
-                else
-                {
-                    blockIndex++;
-                }
-            }
+            await Html.RenderPartialAsync("_ContentBlocks", new Fandom_copy.Views.Posts.ContentBlocksModel {
+                Blocks = orderedBlocks,
+                SectionLookup = sectionLookup,
+                PostId = Model.Id,
+                FallbackTitle = Model.Title
+            });
         }
     </article>
 }

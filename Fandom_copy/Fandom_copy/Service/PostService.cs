@@ -58,6 +58,8 @@ namespace Fandom_copy.Services
                 .Include(p => p.Sections)
                 .Include(p => p.ContentBlocks)
                     .ThenInclude(b => b.Section)
+                .Include(p => p.ContentBlocks)
+                    .ThenInclude(b => b.GalleryImages)
                 .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
             if (post is null)
