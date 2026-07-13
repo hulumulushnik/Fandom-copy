@@ -18,11 +18,42 @@
         // Відновлення паролю
         public string? PasswordResetToken { get; set; }
         public DateTime? PasswordResetTokenExpiresAt { get; set; }
+
+        // Кастомізація профілю
+        /// <summary>
+        /// Іконка (аватар) профілю. Може бути статичним фото або гіфкою.
+        /// </summary>
+        public string? AvatarUrl { get; set; }
+
+        /// <summary>
+        /// Фонове зображення профілю. Може бути статичним фото або гіфкою.
+        /// </summary>
+        public string? BackgroundUrl { get; set; }
+
+        /// <summary>
+        /// Декоративна рамка навколо аватара профілю.
+        /// </summary>
+        public ProfileFrame ProfileFrame { get; set; } = ProfileFrame.None;
     }
 
     public enum GlobalRole
     {
         User,
         Admin
+    }
+
+    /// <summary>
+    /// Набір готових декоративних рамок, які користувач може обрати
+    /// для свого аватара профілю.
+    /// </summary>
+    public enum ProfileFrame
+    {
+        None,
+        Gold,
+        Neon,
+        Fire,
+        Ice,
+        Royal,
+        Galaxy
     }
 }

@@ -4,10 +4,17 @@
     ViewData["Title"] = "Пости";
 }
 
+@if (ViewBag.CategoryName is string categoryName)
+{
+    <div class="wiki-back">
+        <a asp-controller="Categories" asp-action="Details" asp-route-id="@ViewBag.CategoryId">← @categoryName</a>
+    </div>
+}
+
 <div class="posts-heading">
     <div>
         <p class="wiki-kicker">Спільнота FandomHub</p>
-        <h1>Пости</h1>
+        <h1>@(ViewBag.CategoryName is string cn ? $"Пости: {cn}" : "Пости")</h1>
     </div>
     @if (User?.Identity?.IsAuthenticated == true)
     {

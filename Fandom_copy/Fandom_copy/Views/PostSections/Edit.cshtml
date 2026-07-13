@@ -6,6 +6,7 @@
     var postId = (Guid)ViewBag.PostId;
     var sectionId = (Guid)ViewBag.SectionId;
     var sectionImages = ViewBag.SectionImages as List<PostContentBlockDto> ?? new List<PostContentBlockDto>();
+    var sectionFiles = ViewBag.SectionFiles as List<FileAttachmentDto> ?? new List<FileAttachmentDto>();
 }
 
 <section class="editor-page">
@@ -74,6 +75,37 @@
                 </div>
 
                 <div class="media-uploader mt-3">
+                    <h2>Додати файли</h2>
+                    <p>PDF, TXT, ZIP, DOCX, XLSX, PNG або JPG до 15 МБ.</p>
+                    <input type="file" name="attachmentFiles" accept=".pdf,.txt,.zip,.docx,.xlsx,.png,.jpg" multiple class="form-control" />
+                    <small class="text-muted">Нові файли зʼявляться у списку вкладень підпоста.</small>
+                </div>
+
+                <div class="media-uploader mt-3">
+                    <h2>Файли підпоста</h2>
+                    @if (sectionFiles.Any())
+                    {
+                        <div class="attachment-list attachment-list-compact">
+                            @foreach (var file in sectionFiles)
+                            {
+                                <div class="attachment-item">
+                                    <span class="attachment-icon">FILE</span>
+                                    <span class="attachment-meta">
+                                        <strong>@file.FileName</strong>
+                                        <small>@FormatFileSize(file.Size)</small>
+                                    </span>
+                                    <button type="submit" form="deleteAttachment-@file.Id" class="btn btn-sm btn-outline-danger">Видалити</button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">Файлів поки немає.</p>
+                    }
+                </div>
+
+                <div class="media-uploader mt-3">
                     <h2>Фото подпоста</h2>
                     @if (sectionImages.Any())
                     {
@@ -106,8 +138,33 @@
                class="btn btn-outline-secondary">Скасувати</a>
         </div>
     </form>
+
+    @foreach (var file in sectionFiles)
+    {
+        <form id="deleteAttachment-@file.Id"
+              asp-action="DeleteAttachment"
+              asp-route-postId="@postId"
+              asp-route-id="@sectionId"
+              asp-route-attachmentId="@file.Id"
+              method="post">
+            @Html.AntiForgeryToken()
+        </form>
+    }
 </section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+}
+
+@functions {
+    private static string FormatFileSize(long bytes)
+    {
+        const double kiloByte = 1024d;
+        const double megaByte = kiloByte * 1024d;
+
+        if (bytes >= megaByte)
+            return $"{bytes / megaByte:0.#} МБ";
+
+        return $"{Math.Max(bytes / kiloByte, 0.1):0.#} КБ";
+    }
 }

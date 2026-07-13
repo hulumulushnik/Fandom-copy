@@ -1,6 +1,7 @@
 ﻿using Fandom_copy.DTOs.Auth;
 using Fandom_copy.DTOs.Profile;
 using Fandom_copy.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace Fandom_copy.Services
 {
@@ -21,5 +22,16 @@ namespace Fandom_copy.Services
         Task<ServiceResult> ChangePasswordAsync(Guid userId, ChangePasswordDto dto);
 
         Task<ServiceResult> SetBanStatusAsync(Guid userId, bool isBanned);
+
+        // Кастомізація профілю
+        Task<ServiceResult<UserProfileDto>> UpdateAvatarAsync(Guid userId, IFormFile? file);
+        Task<ServiceResult<UserProfileDto>> RemoveAvatarAsync(Guid userId);
+        Task<ServiceResult<UserProfileDto>> UpdateBackgroundAsync(Guid userId, IFormFile? file);
+        Task<ServiceResult<UserProfileDto>> RemoveBackgroundAsync(Guid userId);
+        Task<ServiceResult<UserProfileDto>> UpdateFrameAsync(Guid userId, ProfileFrame frame);
+
+        // Публічний, переглядуваний іншими профіль (напр. прикріплений до поста)
+        Task<ServiceResult<PublicProfileDto>> GetPublicProfileAsync(string login, Guid? viewerId);
+        Task<ServiceResult<PublicProfileDto>> GetPublicProfileByIdAsync(Guid userId, Guid? viewerId);
     }
 }

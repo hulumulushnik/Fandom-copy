@@ -11,9 +11,39 @@
 @if (TempData["Error"] is string err) { <div class="alert alert-danger">@err</div> }
 @if (TempData["Message"] is string msg) { <div class="alert alert-success">@msg</div> }
 
+@if (Model.Author is not null)
+{
+    var authorFrameClass = "frame-" + Model.Author.ProfileFrameName.ToLowerInvariant();
+    <a class="post-author-card" asp-controller="Account" asp-action="PublicProfile" asp-route-login="@Model.Author.Login">
+        <span class="profile-avatar-frame post-author-frame @authorFrameClass">
+            @if (!string.IsNullOrWhiteSpace(Model.Author.AvatarUrl))
+            {
+                <img src="@Url.Content(Model.Author.AvatarUrl)" alt="@Model.Author.Login" class="profile-avatar-img" />
+            }
+            else
+            {
+                <span class="avatar">@Model.Author.Login[..1].ToUpper()</span>
+            }
+        </span>
+        <span class="post-author-meta">
+            <small>Автор поста</small>
+            <strong>@Model.Author.Login</strong>
+        </span>
+    </a>
+}
+
 <section class="wiki-hero">
     <div class="wiki-kicker">@(Model.CategoryName ?? "Fandom page") · @(Model.IsPublic ? "Публичная" : "Приватная")</div>
     <h1>Welcome to the <em>@Model.Title</em> Wiki!</h1>
+    @if (Model.TagNames.Any())
+    {
+        <div class="post-row-meta wiki-tag-list">
+            @foreach (var tag in Model.TagNames)
+            {
+                <span class="post-tag">@tag</span>
+            }
+        </div>
+    }
     @if (!string.IsNullOrWhiteSpace(Model.Description))
     {
         <p>@Model.Description</p>

@@ -20,7 +20,7 @@ var authenticationBuilder = builder.Services.AddAuthentication(CookieAuthenticat
     .AddCookie(options =>
     {
         options.LoginPath = "/Account/Login";
-        options.AccessDeniedPath = "/Account/Login";
+        options.AccessDeniedPath = "/Home/StatusCode/403";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.ExpireTimeSpan = TimeSpan.FromDays(1);
@@ -62,12 +62,17 @@ if (IsOAuthProviderConfigured("Facebook"))
     });
 }
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+});
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<IPostSectionService, PostSectionService>();
 builder.Services.AddScoped<IPostImageStorage, PostImageStorage>();
+builder.Services.AddScoped<IPostFileStorage, PostFileStorage>();
+builder.Services.AddScoped<IProfileImageStorage, ProfileImageStorage>();
 
 var app = builder.Build();
 
@@ -131,6 +136,70 @@ using (var scope = app.Services.CreateScope())
             );
             CREATE UNIQUE INDEX [IX_SavedPosts_UserId_PostId] ON [dbo].[SavedPosts] ([UserId], [PostId]);
         END
+        IF OBJECT_ID(N'[dbo].[Attachments]', N'U') IS NULL
+           AND OBJECT_ID(N'[dbo].[PostSections]', N'U') IS NOT NULL
+        BEGIN
+            CREATE TABLE [dbo].[Attachments] (
+                [Id] uniqueidentifier NOT NULL PRIMARY KEY,
+                [FileName] nvarchar(max) NOT NULL,
+                [Path] nvarchar(max) NOT NULL,
+                [Size] bigint NOT NULL,
+                [PostSectionId] uniqueidentifier NOT NULL,
+                CONSTRAINT [FK_Attachments_PostSections_PostSectionId]
+                    FOREIGN KEY ([PostSectionId]) REFERENCES [dbo].[PostSections] ([Id]) ON DELETE CASCADE
+            );
+            CREATE INDEX [IX_Attachments_PostSectionId] ON [dbo].[Attachments] ([PostSectionId]);
+        END
+        IF OBJECT_ID(N'[dbo].[Tags]', N'U') IS NULL
+        BEGIN
+            CREATE TABLE [dbo].[Tags] (
+                [Id] uniqueidentifier NOT NULL PRIMARY KEY,
+                [Name] nvarchar(max) NOT NULL
+            );
+        END
+        IF OBJECT_ID(N'[dbo].[PostTags]', N'U') IS NULL
+           AND OBJECT_ID(N'[dbo].[Posts]', N'U') IS NOT NULL
+           AND OBJECT_ID(N'[dbo].[Tags]', N'U') IS NOT NULL
+        BEGIN
+            CREATE TABLE [dbo].[PostTags] (
+                [PostId] uniqueidentifier NOT NULL,
+                [TagId] uniqueidentifier NOT NULL,
+                CONSTRAINT [PK_PostTags] PRIMARY KEY ([PostId], [TagId]),
+                CONSTRAINT [FK_PostTags_Posts_PostId] FOREIGN KEY ([PostId]) REFERENCES [dbo].[Posts] ([Id]) ON DELETE CASCADE,
+                CONSTRAINT [FK_PostTags_Tags_TagId] FOREIGN KEY ([TagId]) REFERENCES [dbo].[Tags] ([Id]) ON DELETE CASCADE
+            );
+            CREATE INDEX [IX_PostTags_TagId] ON [dbo].[PostTags] ([TagId]);
+        END
+        IF OBJECT_ID(N'[dbo].[Users]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[Users]', N'GlobalRole') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[Users]
+                ADD [GlobalRole] int NOT NULL CONSTRAINT [DF_Users_GlobalRole] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[Users]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[Users]', N'IsBanned') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[Users]
+                ADD [IsBanned] bit NOT NULL CONSTRAINT [DF_Users_IsBanned] DEFAULT (0);
+        END
+        IF OBJECT_ID(N'[dbo].[Users]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[Users]', N'AvatarUrl') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[Users]
+                ADD [AvatarUrl] nvarchar(max) NULL;
+        END
+        IF OBJECT_ID(N'[dbo].[Users]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[Users]', N'BackgroundUrl') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[Users]
+                ADD [BackgroundUrl] nvarchar(max) NULL;
+        END
+        IF OBJECT_ID(N'[dbo].[Users]', N'U') IS NOT NULL
+           AND COL_LENGTH(N'[dbo].[Users]', N'ProfileFrame') IS NULL
+        BEGIN
+            ALTER TABLE [dbo].[Users]
+                ADD [ProfileFrame] int NOT NULL CONSTRAINT [DF_Users_ProfileFrame] DEFAULT (0);
+        END
         """);
     if (!db.Categories.Any())
     {
@@ -149,6 +218,8 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+app.UseStatusCodePagesWithReExecute("/Home/StatusCode/{0}");
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

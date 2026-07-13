@@ -1,136 +1,169 @@
 is_global = true
 build_property.TargetFramework = net8.0
-build_property.TargetFrameworkIdentifier = .NETCoreApp
-build_property.TargetFrameworkVersion = v8.0
 build_property.TargetPlatformMinVersion = 
 build_property.UsingMicrosoftNETSdkWeb = true
 build_property.ProjectTypeGuids = 
 build_property.InvariantGlobalization = 
 build_property.PlatformNeutralAssembly = 
 build_property.EnforceExtendedAnalyzerRules = 
-build_property.EntryPointFilePath = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = Fandom_copy
 build_property.RootNamespace = Fandom_copy
-build_property.ProjectDir = D:\code\Розробка Fintech додатків Blockchain\Курсач_1\Fandom_copy\Fandom_copy\
+build_property.ProjectDir = C:\Users\user\source\repos\Fandom-copy\Fandom_copy\Fandom_copy\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = D:\code\Розробка Fintech додатків Blockchain\Курсач_1\Fandom_copy\Fandom_copy
+build_property.MSBuildProjectDirectory = C:\Users\user\source\repos\Fandom-copy\Fandom_copy\Fandom_copy
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Account/ChangePassword.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Account/ChangePassword.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxDaGFuZ2VQYXNzd29yZC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Account/ConfirmEmail.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Account/ConfirmEmail.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxDb25maXJtRW1haWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Account/ForgotPassword.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Account/ForgotPassword.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxGb3Jnb3RQYXNzd29yZC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Account/Login.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Account/Login.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxMb2dpbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Account/Profile.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Account/Profile.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxQcm9maWxlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Account/Register.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Account/PublicProfile.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxQdWJsaWNQcm9maWxlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Account/Register.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZWdpc3Rlci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Account/ResendConfirmation.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Account/ResendConfirmation.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZXNlbmRDb25maXJtYXRpb24uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Account/ResetPassword.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Account/ResetPassword.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZXNldFBhc3N3b3JkLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Home/Index.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Admin/Categories.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQ2F0ZWdvcmllcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Admin/EditCategory.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cRWRpdENhdGVnb3J5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Admin/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Admin/Posts.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cUG9zdHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Admin/Users.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cVXNlcnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Categories/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2F0ZWdvcmllc1xEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Categories/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2F0ZWdvcmllc1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Home/Privacy.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/PostContent/Index.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Home/StatusCode.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxTdGF0dXNDb2RlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/PostContent/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdENvbnRlbnRcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/PostSections/Create.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/PostSections/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdFNlY3Rpb25zXENyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/PostSections/Details.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/PostSections/Details.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdFNlY3Rpb25zXERldGFpbHMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/PostSections/Edit.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/PostSections/Edit.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdFNlY3Rpb25zXEVkaXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/PostSections/_SectionNode.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/PostSections/_SectionNode.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdFNlY3Rpb25zXF9TZWN0aW9uTm9kZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Posts/Create.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Posts/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdHNcQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Posts/Details.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Posts/Details.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdHNcRGV0YWlscy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Posts/Edit.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Posts/Edit.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdHNcRWRpdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Posts/Index.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Posts/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdHNcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Posts/Members.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Posts/Members.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdHNcTWVtYmVycy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Posts/Saved.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Posts/Saved.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdHNcU2F2ZWQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Posts/Search.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Posts/Search.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9zdHNcU2VhcmNoLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Settings/Index.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Settings/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2V0dGluZ3NcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Shared/Error.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Shared/_ValidationScriptsPartial.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/_ViewImports.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/_ViewImports.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/_ViewStart.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/code/Розробка Fintech додатків Blockchain/Курсач_1/Fandom_copy/Fandom_copy/Views/Shared/_Layout.cshtml]
+[C:/Users/user/source/repos/Fandom-copy/Fandom_copy/Fandom_copy/Views/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = b-qygnuv99et

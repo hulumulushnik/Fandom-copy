@@ -1,0 +1,82 @@
+@using Fandom_copy.DTOs.Categories
+@using Fandom_copy.Models
+@model CategoryDetailsDto
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="wiki-back">
+    <a asp-controller="Categories" asp-action="Index">← Усі категорії</a>
+</div>
+
+<div class="posts-heading">
+    <div>
+        <p class="wiki-kicker">Категорія</p>
+        <h1>@Model.Name</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <p class="category-detail-desc">@Model.Description</p>
+        }
+    </div>
+    <a asp-controller="Posts" asp-action="Index" asp-route-categoryId="@Model.Id" class="btn btn-primary">Усі пости категорії</a>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (TempData["Message"] is string msg)
+{
+    <div class="alert alert-success">@msg</div>
+}
+
+@if (!Model.Posts.Any())
+{
+    <div class="empty-structure">
+        <strong>У цій категорії ще немає постів</strong>
+        <span>Станьте першим — створіть пост у цій категорії.</span>
+    </div>
+}
+else
+{
+    <div class="posts-list">
+        @foreach (var p in Model.Posts)
+        {
+            var cover = !string.IsNullOrWhiteSpace(p.IconPath)
+                ? p.IconPath
+                : p.ContentBlocks
+                    .Where(b => b.Type == PostContentBlockType.Image)
+                    .OrderBy(b => b.Order)
+                    .Select(b => b.ImagePath)
+                    .FirstOrDefault();
+
+            <a asp-controller="Posts" asp-action="Details" asp-route-id="@p.Id" class="post-row">
+                <div class="post-row-thumb">
+                    @if (!string.IsNullOrWhiteSpace(cover))
+                    {
+                        <img src="@Url.Content(cover)" alt="@p.Title" />
+                    }
+                    else
+                    {
+                        <span class="wiki-topic-placeholder">@p.Title.Substring(0, 1).ToUpper()</span>
+                    }
+                </div>
+                <div class="post-row-body">
+                    <div class="post-row-top">
+                        <h5>@p.Title</h5>
+                        <small class="post-row-date">@p.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(p.Description))
+                    {
+                        <p class="post-row-desc">@p.Description</p>
+                    }
+                    <div class="post-row-meta">
+                        <span class="post-tag @(p.IsPublic ? "post-tag-public" : "post-tag-private")">
+                            @(p.IsPublic ? "Публічний" : "Приватний")
+                        </span>
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+}

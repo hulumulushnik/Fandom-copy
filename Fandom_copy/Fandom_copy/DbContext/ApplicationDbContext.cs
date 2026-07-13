@@ -21,7 +21,7 @@ namespace Fandom_copy.Data
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<Tag> Tags => Set<Tag>();
         public DbSet<Images> Images => Set<Images>();
-        public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
+        public DbSet<FileAttachment> Attachments => Set<FileAttachment>();
         public DbSet<CodeBlock> CodeBlocks => Set<CodeBlock>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -36,7 +36,24 @@ namespace Fandom_copy.Data
 
             modelBuilder.Entity<Post>()
                 .HasMany(p => p.Tags)
-                .WithMany(t => t.Posts);
+                .WithMany(t => t.Posts)
+                .UsingEntity<Dictionary<string, object>>(
+                    "PostTags",
+                    right => right
+                        .HasOne<Tag>()
+                        .WithMany()
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    left => left
+                        .HasOne<Post>()
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    join =>
+                    {
+                        join.ToTable("PostTags");
+                        join.HasKey("PostId", "TagId");
+                    });
 
             modelBuilder.Entity<PostSection>()
                 .HasOne(s => s.ParentSection)
@@ -52,6 +69,18 @@ namespace Fandom_copy.Data
 
             modelBuilder.Entity<PostContentBlock>()
                 .HasIndex(b => new { b.PostId, b.ContainerSectionId, b.Order });
+
+            modelBuilder.Entity<FileAttachment>(entity =>
+            {
+                entity.ToTable("Attachments");
+
+                entity.HasOne(a => a.PostSection)
+                    .WithMany(s => s.Files)
+                    .HasForeignKey(a => a.PostSectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(a => a.PostSectionId);
+            });
 
             modelBuilder.Entity<PostMember>()
                 .HasOne(pm => pm.User)

@@ -1,0 +1,50 @@
+@using Fandom_copy.DTOs.Categories
+@model List<CategoryListItemDto>
+@{
+    ViewData["Title"] = "Категорії";
+}
+
+<div class="posts-heading">
+    <div>
+        <p class="wiki-kicker">Спільнота FandomHub</p>
+        <h1>Категорії</h1>
+    </div>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (TempData["Message"] is string msg)
+{
+    <div class="alert alert-success">@msg</div>
+}
+
+@if (!Model.Any())
+{
+    <div class="empty-structure">
+        <strong>Категорій ще немає</strong>
+        <span>Вони з'являться тут, щойно хтось їх додасть.</span>
+    </div>
+}
+else
+{
+    <div class="categories-grid">
+        @foreach (var c in Model)
+        {
+            <a asp-controller="Categories" asp-action="Details" asp-route-id="@c.Id" class="category-card">
+                <div class="category-card-icon">
+                    <span class="wiki-topic-placeholder">@c.Name.Substring(0, 1).ToUpper()</span>
+                </div>
+                <div class="category-card-body">
+                    <h5>@c.Name</h5>
+                    @if (!string.IsNullOrWhiteSpace(c.Description))
+                    {
+                        <p class="category-card-desc">@c.Description</p>
+                    }
+                    <span class="post-tag">@c.PostCount пост(ів)</span>
+                </div>
+            </a>
+        }
+    </div>
+}

@@ -1,0 +1,88 @@
+@model Fandom_copy.DTOs.Profile.PublicProfileDto
+@using Fandom_copy.DTOs.Posts
+@{
+    ViewData["Title"] = $"Профіль {Model.Login}";
+    var frameClass = "frame-" + Model.ProfileFrameName.ToLowerInvariant();
+}
+<section class="profile-shell public-profile-shell">
+    <div class="profile-banner @(string.IsNullOrWhiteSpace(Model.BackgroundUrl) ? "profile-banner-empty" : "")"
+         style="@(string.IsNullOrWhiteSpace(Model.BackgroundUrl) ? "" : $"background-image:url('{Url.Content(Model.BackgroundUrl)}')")">
+    </div>
+
+    <div class="profile-heading">
+        <div class="profile-avatar-frame @frameClass">
+            @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+            {
+                <img src="@Url.Content(Model.AvatarUrl)" alt="@Model.Login" class="profile-avatar-img" />
+            }
+            else
+            {
+                <div class="avatar">@Model.Login[..1].ToUpper()</div>
+            }
+        </div>
+        <div>
+            <p class="eyebrow">ПРОФІЛЬ КОРИСТУВАЧА</p>
+            <h1>@Model.Login</h1>
+            <p class="muted">На сайті з @Model.RegistrationDate.ToString("MMMM yyyy") · @Model.GlobalRole</p>
+        </div>
+    </div>
+
+    <div class="posts-heading">
+        <div>
+            <p class="wiki-kicker">Публікації</p>
+            <h1>Пости @Model.Login</h1>
+        </div>
+    </div>
+
+    @if (!Model.PublicPosts.Any())
+    {
+        <div class="empty-structure">
+            <strong>Тут поки немає публічних постів</strong>
+            <span>Цей користувач ще не опублікував жодного поста.</span>
+        </div>
+    }
+    else
+    {
+        <div class="posts-list">
+            @foreach (var p in Model.PublicPosts)
+            {
+                var cover = !string.IsNullOrWhiteSpace(p.IconPath)
+                    ? p.IconPath
+                    : p.ContentBlocks
+                        .Where(b => b.Type == PostContentBlockType.Image)
+                        .OrderBy(b => b.Order)
+                        .Select(b => b.ImagePath)
+                        .FirstOrDefault();
+
+                <a asp-controller="Posts" asp-action="Details" asp-route-id="@p.Id" class="post-row">
+                    <div class="post-row-thumb">
+                        @if (!string.IsNullOrWhiteSpace(cover))
+                        {
+                            <img src="@Url.Content(cover)" alt="@p.Title" />
+                        }
+                        else
+                        {
+                            <span class="wiki-topic-placeholder">@p.Title.Substring(0, 1).ToUpper()</span>
+                        }
+                    </div>
+                    <div class="post-row-body">
+                        <div class="post-row-top">
+                            <h5>@p.Title</h5>
+                            <small class="post-row-date">@p.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(p.Description))
+                        {
+                            <p class="post-row-desc">@p.Description</p>
+                        }
+                        <div class="post-row-meta">
+                            <span class="post-tag">@(p.CategoryName ?? "—")</span>
+                            <span class="post-tag @(p.IsPublic ? "post-tag-public" : "post-tag-private")">
+                                @(p.IsPublic ? "Публічний" : "Приватний")
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</section>

@@ -614,3 +614,5 @@ C:\Users\smart\Documents\Codex\2026-07-11\fandom-1-1\project\Fandom_copy\obj\Deb
 C:\Users\smart\Documents\Codex\2026-07-11\fandom-1-1\project\Fandom_copy\obj\Debug\net8.0\ref\Fandom_copy.dll
 D:\code\Розробка Fintech додатків Blockchain\Курсач\Fandom_copy\Fandom_copy\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.Facebook.dll
 D:\code\Розробка Fintech додатків Blockchain\Курсач\Fandom_copy\Fandom_copy\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.Google.dll
+C:\Users\user\source\repos\Fandom-copy\Fandom_copy\Fandom_copy\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.Facebook.dll
+C:\Users\user\source\repos\Fandom-copy\Fandom_copy\Fandom_copy\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.Google.dll

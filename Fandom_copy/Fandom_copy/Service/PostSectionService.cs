@@ -18,6 +18,7 @@ namespace Fandom_copy.Services
         {
             var section = await _db.PostSections
                 .Include(s => s.SubSections)
+                .Include(s => s.Files)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (section is null)

@@ -101,6 +101,18 @@ namespace Fandom_copy.Controllers
             return View();
         }
 
+        [Route("Home/StatusCode/{code:int}")]
+        public IActionResult StatusCode(int code)
+        {
+            if (code >= 400 && code <= 599)
+            {
+                Response.StatusCode = code;
+            }
+
+            ViewBag.StatusCode = code;
+            return View();
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

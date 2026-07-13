@@ -10,6 +10,8 @@ namespace Fandom_copy.DTOs.Posts
         public string Email { get; set; } = string.Empty;
         public PostRole Role { get; set; }
         public DateTime AddedAt { get; set; }
+        public string? AvatarUrl { get; set; }
+        public ProfileFrame ProfileFrame { get; set; }
 
         public static PostMemberDto FromEntity(PostMember member)
         {
@@ -20,7 +22,9 @@ namespace Fandom_copy.DTOs.Posts
                 Login = member.User?.Login ?? string.Empty,
                 Email = member.User?.Email ?? string.Empty,
                 Role = member.Role,
-                AddedAt = member.AddedAt
+                AddedAt = member.AddedAt,
+                AvatarUrl = member.User?.AvatarUrl,
+                ProfileFrame = member.User?.ProfileFrame ?? ProfileFrame.None
             };
         }
     }

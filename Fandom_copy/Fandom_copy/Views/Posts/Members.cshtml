@@ -78,8 +78,23 @@ else
         <tbody>
             @foreach (var m in Model)
             {
+                var memberFrameClass = "frame-" + m.ProfileFrame.ToString().ToLowerInvariant();
                 <tr>
-                    <td>@m.Login</td>
+                    <td>
+                        <a class="member-login-link" asp-controller="Account" asp-action="PublicProfile" asp-route-login="@m.Login">
+                            <span class="profile-avatar-frame member-avatar-frame @memberFrameClass">
+                                @if (!string.IsNullOrWhiteSpace(m.AvatarUrl))
+                                {
+                                    <img src="@Url.Content(m.AvatarUrl)" alt="@m.Login" class="profile-avatar-img" />
+                                }
+                                else
+                                {
+                                    <span class="avatar">@m.Login[..1].ToUpper()</span>
+                                }
+                            </span>
+                            @m.Login
+                        </a>
+                    </td>
                     <td>@m.Email</td>
                     <td>
                         @if (m.Role == PostRole.Owner)

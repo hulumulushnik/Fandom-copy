@@ -25,12 +25,22 @@ namespace Fandom_copy.Controllers
             _imageStorage = imageStorage;
         }
 
-        // GET /posts
+        // GET /posts?categoryId=...
         [HttpGet("")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(Guid? categoryId)
         {
             var userId = TryGetCurrentUserId();
-            var result = await _postService.GetAllAsync(userId);
+            var result = await _postService.GetAllAsync(userId, categoryId);
+
+            if (categoryId is not null)
+            {
+                ViewBag.CategoryId = categoryId;
+                ViewBag.CategoryName = await _db.Categories
+                    .Where(c => c.Id == categoryId.Value)
+                    .Select(c => c.Name)
+                    .FirstOrDefaultAsync();
+            }
+
             return View(result.Data ?? new List<PostDto>());
         }
 
@@ -84,10 +94,12 @@ namespace Fandom_copy.Controllers
                 var matches = await visible
                     .Include(p => p.Category)
                     .Include(p => p.Sections)
+                    .Include(p => p.Tags)
                     .Where(p =>
                         p.Title.ToLower().Contains(lowered) ||
                         p.Description.ToLower().Contains(lowered) ||
                         p.Category.Name.ToLower().Contains(lowered) ||
+                        p.Tags.Any(t => t.Name.ToLower().Contains(lowered)) ||
                         p.Sections.Any(s => s.Title.ToLower().Contains(lowered) || s.Text.ToLower().Contains(lowered)))
                     .OrderByDescending(p => p.UpdatedAt)
                     .Take(40)
@@ -128,7 +140,16 @@ namespace Fandom_copy.Controllers
                         }
                         else
                         {
-                            dto.Snippet = p.Description;
+                            var tag = p.Tags.FirstOrDefault(t => t.Name.ToLower().Contains(lowered));
+                            if (tag is not null)
+                            {
+                                dto.MatchedIn = "Tag";
+                                dto.Snippet = tag.Name;
+                            }
+                            else
+                            {
+                                dto.Snippet = p.Description;
+                            }
                         }
                     }
 
@@ -198,6 +219,7 @@ namespace Fandom_copy.Controllers
 
             var posts = await _db.Posts
                 .Include(p => p.Category)
+                .Include(p => p.Tags)
                 .Where(p => savedIds.Contains(p.Id) && !p.IsDeleted)
                 .ToListAsync();
 
@@ -284,6 +306,7 @@ namespace Fandom_copy.Controllers
                 Title = result.Data!.Title,
                 Description = result.Data.Description,
                 CategoryId = result.Data.CategoryId,
+                Tags = result.Data.TagNames,
                 IsPublic = result.Data.IsPublic
             };
 

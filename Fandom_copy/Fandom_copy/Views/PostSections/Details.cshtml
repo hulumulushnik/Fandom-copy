@@ -124,3 +124,40 @@ else
         }
     </article>
 }
+
+@if (Model.Attachments.Any())
+{
+    <section class="wiki-content">
+        <div class="wiki-attachments-block">
+            <div class="wiki-attachments-heading">
+                <span class="wiki-kicker">Файли</span>
+                <h2>Прикріплені файли</h2>
+            </div>
+            <div class="attachment-list">
+                @foreach (var file in Model.Attachments)
+                {
+                    <a class="attachment-item attachment-link" href="@Url.Content(file.Path)" download>
+                        <span class="attachment-icon">FILE</span>
+                        <span class="attachment-meta">
+                            <strong>@file.FileName</strong>
+                            <small>@FormatFileSize(file.Size)</small>
+                        </span>
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@functions {
+    private static string FormatFileSize(long bytes)
+    {
+        const double kiloByte = 1024d;
+        const double megaByte = kiloByte * 1024d;
+
+        if (bytes >= megaByte)
+            return $"{bytes / megaByte:0.#} МБ";
+
+        return $"{Math.Max(bytes / kiloByte, 0.1):0.#} КБ";
+    }
+}

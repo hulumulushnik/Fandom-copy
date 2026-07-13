@@ -12,6 +12,12 @@ namespace Fandom_copy.DTOs.Profile
         public bool IsBanned { get; set; }
         public bool EmailConfirmed { get; set; }
 
+        // Кастомізація профілю
+        public string? AvatarUrl { get; set; }
+        public string? BackgroundUrl { get; set; }
+        public ProfileFrame ProfileFrame { get; set; }
+        public string ProfileFrameName => ProfileFrame.ToString();
+
         public static UserProfileDto FromUser(User user)
         {
             return new UserProfileDto
@@ -22,7 +28,10 @@ namespace Fandom_copy.DTOs.Profile
                 GlobalRole = user.GlobalRole.ToString(),
                 RegistrationDate = user.RegistrationDate,
                 IsBanned = user.IsBanned,
-                EmailConfirmed = user.EmailConfirmed
+                EmailConfirmed = user.EmailConfirmed,
+                AvatarUrl = user.AvatarUrl,
+                BackgroundUrl = user.BackgroundUrl,
+                ProfileFrame = user.ProfileFrame
             };
         }
     }

@@ -1,0 +1,74 @@
+@model List<Fandom_copy.DTOs.Admin.AdminPostListItemDto>
+@{
+    ViewData["Title"] = "Адмінські пости";
+}
+
+<section class="profile-shell admin-shell">
+    <div class="wiki-back">
+        <a asp-action="Index">← Адмінка</a>
+    </div>
+
+    <div class="posts-heading">
+        <div>
+            <p class="wiki-kicker">Модерація контенту</p>
+            <h1>Усі пости</h1>
+        </div>
+    </div>
+
+    @if (TempData["Error"] is string err)
+    {
+        <div class="alert alert-danger">@err</div>
+    }
+    @if (TempData["Message"] is string msg)
+    {
+        <div class="alert alert-success">@msg</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-structure">
+            <strong>Постів немає</strong>
+            <span>Список буде заповнено після створення постів.</span>
+        </div>
+    }
+    else
+    {
+        <div class="posts-list">
+            @foreach (var post in Model)
+            {
+                <div class="post-row admin-row">
+                    <div class="post-row-thumb">
+                        <span class="wiki-topic-placeholder">@post.Title[..1].ToUpper()</span>
+                    </div>
+                    <div class="post-row-body">
+                        <div class="post-row-top">
+                            <h5>@post.Title</h5>
+                            <small class="post-row-date">Оновлено: @post.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                        </div>
+                        <p class="post-row-desc">Власник: @(post.OwnerLogin ?? "—") · Створено: @post.CreatedAt.ToString("yyyy-MM-dd HH:mm")</p>
+                        <div class="post-row-meta">
+                            <span class="post-tag">@post.CategoryName</span>
+                            <span class="post-tag @(post.IsPublic ? "post-tag-public" : "post-tag-private")">
+                                @(post.IsPublic ? "Публічний" : "Приватний")
+                            </span>
+                            @if (post.IsDeleted)
+                            {
+                                <span class="post-tag admin-tag-danger">Видалено</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="admin-row-actions">
+                        @if (!post.IsDeleted)
+                        {
+                            <a asp-controller="Posts" asp-action="Details" asp-route-id="@post.Id" class="secondary-btn">Відкрити</a>
+                            <form asp-action="DeletePost" asp-route-id="@post.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="secondary-btn admin-danger-btn">Видалити</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>
