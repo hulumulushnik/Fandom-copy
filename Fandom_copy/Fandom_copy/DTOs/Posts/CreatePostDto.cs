@@ -14,6 +14,8 @@ namespace Fandom_copy.DTOs.Posts
         [Required(ErrorMessage = "Категорія обов'язкова")]
         public Guid CategoryId { get; set; }
 
+        public List<string>? Tags { get; set; }
+
         public bool IsPublic { get; set; } = true;
     }
 }

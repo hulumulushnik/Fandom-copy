@@ -1,9 +1,11 @@
 @using Fandom_copy.DTOs.Posts
 @using Fandom_copy.Models
+@using Fandom_copy.Services
 @model PostDto
 @{
     ViewData["Title"] = Model.Title;
     var sectionLookup = Model.Sections.ToDictionary(s => s.Id);
+    var postVersions = ViewBag.PostVersions as List<PostVersionDto> ?? new List<PostVersionDto>();
 }
 
 <nav class="wiki-back"><a asp-controller="Posts" asp-action="Index">← К публикациям</a></nav>
@@ -11,9 +13,39 @@
 @if (TempData["Error"] is string err) { <div class="alert alert-danger">@err</div> }
 @if (TempData["Message"] is string msg) { <div class="alert alert-success">@msg</div> }
 
+@if (Model.Author is not null)
+{
+    var authorFrameClass = "frame-" + Model.Author.ProfileFrameName.ToLowerInvariant();
+    <a class="post-author-card" asp-controller="Account" asp-action="PublicProfile" asp-route-login="@Model.Author.Login">
+        <span class="profile-avatar-frame post-author-frame @authorFrameClass">
+            @if (!string.IsNullOrWhiteSpace(Model.Author.AvatarUrl))
+            {
+                <img src="@Url.Content(Model.Author.AvatarUrl)" alt="@Model.Author.Login" class="profile-avatar-img" />
+            }
+            else
+            {
+                <span class="avatar">@Model.Author.Login[..1].ToUpper()</span>
+            }
+        </span>
+        <span class="post-author-meta">
+            <small>Автор поста</small>
+            <strong>@Model.Author.Login</strong>
+        </span>
+    </a>
+}
+
 <section class="wiki-hero">
     <div class="wiki-kicker">@(Model.CategoryName ?? "Fandom page") · @(Model.IsPublic ? "Публичная" : "Приватная")</div>
     <h1>Welcome to the <em>@Model.Title</em> Wiki!</h1>
+    @if (Model.TagNames.Any())
+    {
+        <div class="post-row-meta wiki-tag-list">
+            @foreach (var tag in Model.TagNames)
+            {
+                <span class="post-tag">@tag</span>
+            }
+        </div>
+    }
     @if (!string.IsNullOrWhiteSpace(Model.Description))
     {
         <p>@Model.Description</p>
@@ -38,65 +70,58 @@
     </div>
 </section>
 
+@if (Model.CanManageMembers)
+{
+    <section class="wiki-content">
+        <div class="post-version-panel">
+            <div class="post-version-heading">
+                <div>
+                    <span class="wiki-kicker">Owner tools</span>
+                    <h2>Откат поста</h2>
+                </div>
+                <small>Версии создаются автоматически перед изменениями редакторов.</small>
+            </div>
+            @if (postVersions.Any())
+            {
+                <div class="post-version-list">
+                    @foreach (var version in postVersions)
+                    {
+                        <div class="post-version-item">
+                            <div>
+                                <strong>@version.Action</strong>
+                                <small>@version.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm") · @version.UserLogin</small>
+                            </div>
+                            <form asp-action="RestoreVersion"
+                                  asp-route-id="@Model.Id"
+                                  asp-route-versionId="@version.Id"
+                                  method="post"
+                                  onsubmit="return confirm('Відкотити пост до цієї версії? Поточний стан також буде збережено як резервну версію.');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-warning">Відкотити</button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mb-0">Попередніх версій поки немає.</p>
+            }
+        </div>
+    </section>
+}
+
 @if (Model.ContentBlocks.Any())
 {
     var orderedBlocks = Model.ContentBlocks.OrderBy(b => b.Order).ToList();
     <article class="wiki-content">
         @{
-            var blockIndex = 0;
-            while (blockIndex < orderedBlocks.Count)
-            {
-                var block = orderedBlocks[blockIndex];
-                if (block.Type == PostContentBlockType.Text)
-                {
-                    <div class="wiki-copy">@block.Text</div>
-                    blockIndex++;
-                }
-                else if (block.Type == PostContentBlockType.Image && !string.IsNullOrWhiteSpace(block.ImagePath))
-                {
-                    <figure class="wiki-image-block">
-                        <img src="@Url.Content(block.ImagePath)" alt="@(string.IsNullOrWhiteSpace(block.ImageCaption) ? Model.Title : block.ImageCaption)" />
-                        @if (!string.IsNullOrWhiteSpace(block.ImageCaption))
-                        {
-                            <figcaption>@block.ImageCaption</figcaption>
-                        }
-                    </figure>
-                    blockIndex++;
-                }
-                else if (block.SectionId is Guid)
-                {
-                    <div class="wiki-topic-grid">
-                        @while (blockIndex < orderedBlocks.Count
-                            && orderedBlocks[blockIndex].Type != PostContentBlockType.Text
-                            && !(orderedBlocks[blockIndex].Type == PostContentBlockType.Image && !string.IsNullOrWhiteSpace(orderedBlocks[blockIndex].ImagePath))
-                            && orderedBlocks[blockIndex].SectionId is Guid)
-                        {
-                            var topicBlock = orderedBlocks[blockIndex];
-                            var topicSectionId = topicBlock.SectionId!.Value;
-                            var section = sectionLookup.GetValueOrDefault(topicSectionId);
-                            <a class="wiki-topic-card" asp-controller="PostSections" asp-action="Details" asp-route-postId="@Model.Id" asp-route-id="@topicSectionId">
-                                <span class="wiki-topic-art">
-                                    @if (!string.IsNullOrWhiteSpace(section?.IconPath ?? section?.PrimaryImagePath))
-                                    {
-                                        <img src="@Url.Content(section.IconPath ?? section.PrimaryImagePath)" alt="@topicBlock.SectionTitle" />
-                                    }
-                                    else
-                                    {
-                                        <span class="wiki-topic-placeholder">!</span>
-                                    }
-                                </span>
-                                <strong>@(topicBlock.SectionTitle ?? "Под-пост")</strong>
-                                <small>Открыть под-пост →</small>
-                            </a>
-                            blockIndex++;
-                        }
-                    </div>
-                }
-                else
-                {
-                    blockIndex++;
-                }
-            }
+            await Html.RenderPartialAsync("_ContentBlocks", new Fandom_copy.Views.Posts.ContentBlocksModel {
+                Blocks = orderedBlocks,
+                SectionLookup = sectionLookup,
+                PostId = Model.Id,
+                FallbackTitle = Model.Title
+            });
         }
     </article>
 }

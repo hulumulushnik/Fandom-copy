@@ -83,7 +83,7 @@
         <div class="home-category-grid">
             @foreach (var cat in Model.Categories)
             {
-                <a class="home-category-card" asp-controller="Posts" asp-action="Index">
+                <a class="home-category-card" asp-controller="Categories" asp-action="Details" asp-route-id="@cat.Id">
                     <div class="home-category-cover">
                         @if (!string.IsNullOrWhiteSpace(cat.CoverImagePath))
                         {

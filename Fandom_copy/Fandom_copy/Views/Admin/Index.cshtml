@@ -1,0 +1,40 @@
+@model Fandom_copy.DTOs.Admin.AdminDashboardDto
+@{
+    ViewData["Title"] = "Адмінка";
+}
+
+<section class="profile-shell admin-shell">
+    <div class="posts-heading">
+        <div>
+            <p class="wiki-kicker">Панель керування</p>
+            <h1>Адмінка</h1>
+        </div>
+    </div>
+
+    @if (TempData["Error"] is string err)
+    {
+        <div class="alert alert-danger">@err</div>
+    }
+    @if (TempData["Message"] is string msg)
+    {
+        <div class="alert alert-success">@msg</div>
+    }
+
+    <div class="admin-metric-grid">
+        <article class="profile-card admin-metric-card">
+            <span>Користувачі</span>
+            <strong>@Model.UserCount</strong>
+            <a asp-action="Users" class="secondary-btn">Керувати</a>
+        </article>
+        <article class="profile-card admin-metric-card">
+            <span>Пости</span>
+            <strong>@Model.PostCount</strong>
+            <a asp-action="Posts" class="secondary-btn">Переглянути</a>
+        </article>
+        <article class="profile-card admin-metric-card">
+            <span>Категорії</span>
+            <strong>@Model.CategoryCount</strong>
+            <a asp-action="Categories" class="secondary-btn">Керувати</a>
+        </article>
+    </div>
+</section>

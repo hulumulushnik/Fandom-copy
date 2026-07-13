@@ -1,11 +1,15 @@
 using System.Security.Claims;
+using Fandom_copy.Data;
 using Fandom_copy.DTOs.Auth;
+using Fandom_copy.DTOs.Posts;
 using Fandom_copy.DTOs.Profile;
+using Fandom_copy.Models;
 using Fandom_copy.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fandom_copy.Controllers;
 
@@ -15,11 +19,13 @@ public class AccountController : Controller
 
     private readonly IUserService _users;
     private readonly IAuthenticationSchemeProvider _schemes;
+    private readonly ApplicationDbContext _db;
 
-    public AccountController(IUserService users, IAuthenticationSchemeProvider schemes)
+    public AccountController(IUserService users, IAuthenticationSchemeProvider schemes, ApplicationDbContext db)
     {
         _users = users;
         _schemes = schemes;
+        _db = db;
     }
 
     [HttpGet]
@@ -166,8 +172,21 @@ public class AccountController : Controller
     [Authorize, HttpGet]
     public async Task<IActionResult> Profile()
     {
-        var result = await _users.GetProfileAsync(CurrentUserId());
-        return result.Success ? View(result.Data) : NotFound();
+        var userId = CurrentUserId();
+        var result = await _users.GetProfileAsync(userId);
+        if (!result.Success) return NotFound();
+
+        var myPosts = await _db.PostMembers
+            .Include(m => m.Post)
+                .ThenInclude(p => p.Category)
+            .Where(m => m.UserId == userId && m.Role == PostRole.Owner && !m.Post.IsDeleted)
+            .OrderByDescending(m => m.Post.UpdatedAt)
+            .Select(m => m.Post)
+            .ToListAsync();
+
+        ViewBag.MyPosts = myPosts.Select(p => PostDto.FromEntity(p)).ToList();
+
+        return View(result.Data);
     }
     [Authorize, HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Profile(UpdateProfileDto dto)
@@ -188,6 +207,80 @@ public class AccountController : Controller
         if (!result.Success) { ModelState.AddModelError(string.Empty, result.Error!); return View(dto); }
         TempData["Success"] = "Password changed.";
         return RedirectToAction(nameof(Profile));
+    }
+
+    // -----------------------------------------------------------------
+    //  Кастомізація профілю: іконка (фото/гіфка), фон (фото/гіфка), рамка
+    // -----------------------------------------------------------------
+
+    [Authorize, HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadAvatar(IFormFile? avatarFile)
+    {
+        var result = await _users.UpdateAvatarAsync(CurrentUserId(), avatarFile);
+        if (!result.Success) TempData["Error"] = result.Error;
+        else TempData["Success"] = "Іконку профілю оновлено.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [Authorize, HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveAvatar()
+    {
+        await _users.RemoveAvatarAsync(CurrentUserId());
+        TempData["Success"] = "Іконку профілю видалено.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [Authorize, HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadBackground(IFormFile? backgroundFile)
+    {
+        var result = await _users.UpdateBackgroundAsync(CurrentUserId(), backgroundFile);
+        if (!result.Success) TempData["Error"] = result.Error;
+        else TempData["Success"] = "Фон профілю оновлено.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [Authorize, HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveBackground()
+    {
+        await _users.RemoveBackgroundAsync(CurrentUserId());
+        TempData["Success"] = "Фон профілю видалено.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [Authorize, HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetFrame(ProfileFrame frame)
+    {
+        var result = await _users.UpdateFrameAsync(CurrentUserId(), frame);
+        if (!result.Success) TempData["Error"] = result.Error;
+        else TempData["Success"] = "Рамку профілю оновлено.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    // -----------------------------------------------------------------
+    //  Публічний, переглядуваний профіль (прикріплюється до поста/учасників)
+    // -----------------------------------------------------------------
+
+    [AllowAnonymous, HttpGet]
+    public async Task<IActionResult> PublicProfile(string login)
+    {
+        if (string.IsNullOrWhiteSpace(login))
+            return NotFound();
+
+        Guid? viewerId = User.Identity?.IsAuthenticated == true ? CurrentUserId() : null;
+        var result = await _users.GetPublicProfileAsync(login, viewerId);
+        if (!result.Success) return NotFound();
+
+        return View(result.Data);
+    }
+
+    [AllowAnonymous, HttpGet]
+    public async Task<IActionResult> PublicProfileById(Guid userId)
+    {
+        Guid? viewerId = User.Identity?.IsAuthenticated == true ? CurrentUserId() : null;
+        var result = await _users.GetPublicProfileByIdAsync(userId, viewerId);
+        if (!result.Success) return NotFound();
+
+        return View("PublicProfile", result.Data);
     }
 
     private Guid CurrentUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

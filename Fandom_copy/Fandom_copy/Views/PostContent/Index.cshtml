@@ -1,9 +1,42 @@
 @using Fandom_copy.DTOs.Posts
 @using Fandom_copy.Models
+@using Fandom_copy.Services
 @model PostContentEditorDto
 @{
     ViewData["Title"] = "Структура публикации";
     var containerId = Model.ContainerSectionId;
+    string SizeName(PostTextSize s) => s switch {
+        PostTextSize.Small => "маленький",
+        PostTextSize.Large => "большой",
+        PostTextSize.Heading => "заголовок",
+        _ => "обычный"
+    };
+    string AlignName(PostTextAlign a) => a switch {
+        PostTextAlign.Center => "по центру",
+        PostTextAlign.Right => "справа",
+        _ => "слева"
+    };
+    string StyleName(PostTextStyle s) => s switch {
+        PostTextStyle.BulletList => "маркированный список",
+        PostTextStyle.NumberedList => "нумерованный список",
+        PostTextStyle.Quote => "цитата",
+        _ => "абзац"
+    };
+    string DisplayName(PostSectionDisplayStyle s) => s switch {
+        PostSectionDisplayStyle.CenteredCard => "по центру",
+        PostSectionDisplayStyle.LeftCard => "слева",
+        PostSectionDisplayStyle.RightCard => "справа",
+        PostSectionDisplayStyle.TextLink => "текст-ссылка",
+        PostSectionDisplayStyle.CompactRow => "компактная строка",
+        _ => "карточка с иконкой"
+    };
+    string GalleryStyleName(PostGalleryStyle s) => s switch {
+        PostGalleryStyle.Masonry => "мозаика",
+        PostGalleryStyle.Carousel => "карусель",
+        PostGalleryStyle.Strip => "лента",
+        _ => "сетка"
+    };
+    string TemplateName(PostBlockTemplateType t) => PostContentFormatting.TemplateLabel(t);
 }
 
 <nav class="wiki-back">
@@ -22,7 +55,7 @@
         <div>
             <p class="wiki-kicker">Редактор страницы</p>
             <h1>Структура: @Model.Title</h1>
-            <p>Собирайте страницу как на Fandom: вступление, галерея, карточки разделов и вложенные страницы. Порядок блоков меняется стрелками.</p>
+            <p>Собирайте страницу как на Fandom: вступление, галерея, карточки разделов и вложенные страницы. Перетаскивайте блоки, форматируйте текст, добавляйте шаблоны.</p>
         </div>
         <a class="btn btn-primary" asp-controller="PostSections" asp-action="Create" asp-route-postId="@Model.PostId" asp-route-parentSectionId="@containerId">+ Создать под-пост</a>
     </div>
@@ -31,32 +64,42 @@
 
     <div class="fandom-toolbelt">
         <div>
-            <strong>Порядок блоков = порядок на странице</strong>
-            <span>Фото можно вставлять пачкой, подпосты становятся карточками, текст можно править прямо здесь.</span>
+            <strong>Перетаскивайте блоки мышкой</strong>
+            <span>Стрелки ↑ / ↓ работают как раньше, если JS отключён. Форматирование хранится структурированно и не допускает произвольный HTML.</span>
         </div>
         <div class="toolbelt-pills">
-            <span>Text</span>
-            <span>Images</span>
-            <span>Sub-pages</span>
-            <span>Fandom grid</span>
+            <span>Rich text</span>
+            <span>Templates</span>
+            <span>Gallery</span>
+            <span>Drag &amp; drop</span>
         </div>
     </div>
 
     <div class="structure-grid">
-        <section class="structure-list">
+        <section class="structure-list js-block-list"
+                 data-reorder-url="@(containerId is null
+                     ? Url.Action("Reorder", "PostContent", new { postId = Model.PostId })
+                     : Url.Action("Reorder", "PostContent", new { postId = Model.PostId, sectionId = containerId }))">
+            @Html.AntiForgeryToken()
             @if (!Model.Blocks.Any())
             {
                 <div class="empty-structure">
                     <strong>Страница пока пустая.</strong>
-                    <span>Добавьте первый текст, фото или подпост через панель инструментов.</span>
+                    <span>Добавьте первый текст, фото, шаблон или подпост через панель инструментов.</span>
                 </div>
             }
 
             @for (var i = 0; i < Model.Blocks.Count; i++)
             {
                 var block = Model.Blocks[i];
-                <article class="structure-block">
+                var previewClasses = string.Join(' ',
+                    PostContentFormatting.TextSizeClass(block.TextSize),
+                    PostContentFormatting.TextAlignClass(block.TextAlign),
+                    PostContentFormatting.TextStyleClass(block.TextStyle),
+                    PostContentFormatting.TextColorClass(block.TextColor));
+                <article class="structure-block js-block" draggable="true" data-block-id="@block.Id">
                     <div class="structure-block-bar">
+                        <span class="drag-handle" title="Перетащить">⋮⋮</span>
                         <span class="structure-order">#@(i + 1)</span>
                         <span class="badge text-bg-secondary">@block.Type</span>
                         <div class="structure-controls">
@@ -75,13 +118,58 @@
                         </div>
                     </div>
 
-                    @if (block.Type == PostContentBlockType.Text)
+                    @if (block.Type == PostContentBlockType.Text || block.Type == PostContentBlockType.Template)
                     {
-                        <form asp-action="UpdateText" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" asp-route-id="@block.Id" method="post" class="structure-edit-form">
+                        var isTemplate = block.Type == PostContentBlockType.Template;
+                        <form asp-action="UpdateText" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" asp-route-id="@block.Id" method="post" class="structure-edit-form js-rich-form">
                             @Html.AntiForgeryToken()
-                            <label class="form-label">Текстовый блок</label>
-                            <textarea name="text" rows="5" class="form-control">@block.Text</textarea>
-                            <button class="btn btn-sm btn-outline-primary mt-2">Сохранить текст</button>
+                            <label class="form-label">
+                                @(isTemplate ? $"Шаблон: {TemplateName(block.TemplateType)}" : "Текстовый блок")
+                            </label>
+
+                            <div class="rich-toolbar" role="toolbar" aria-label="Форматирование">
+                                <button type="button" class="rt-btn js-rt-toggle" data-target="NewTextBold" title="Жирный"><b>Ж</b></button>
+                                <button type="button" class="rt-btn js-rt-toggle" data-target="NewTextItalic" title="Курсив"><i>К</i></button>
+                                <button type="button" class="rt-btn js-rt-toggle" data-target="NewTextUnderline" title="Подчёркнутый"><u>П</u></button>
+                                <button type="button" class="rt-btn js-rt-toggle" data-target="NewTextStrike" title="Зачёркнутый"><s>З</s></button>
+                                <select name="NewTextSize" class="form-select form-select-sm" title="Размер">
+                                    @foreach (var s in Enum.GetValues<PostTextSize>())
+                                    {
+                                        <option value="@((int)s)" selected="@(s == block.TextSize)">@SizeName(s)</option>
+                                    }
+                                </select>
+                                <select name="NewTextAlign" class="form-select form-select-sm" title="Выравнивание">
+                                    @foreach (var a in Enum.GetValues<PostTextAlign>())
+                                    {
+                                        <option value="@((int)a)" selected="@(a == block.TextAlign)">@AlignName(a)</option>
+                                    }
+                                </select>
+                                <select name="NewTextStyle" class="form-select form-select-sm" title="Стиль">
+                                    @foreach (var st in Enum.GetValues<PostTextStyle>())
+                                    {
+                                        <option value="@((int)st)" selected="@(st == block.TextStyle)">@StyleName(st)</option>
+                                    }
+                                </select>
+                                <select name="NewTextColor" class="form-select form-select-sm" title="Цвет">
+                                    <option value="" selected="@string.IsNullOrEmpty(block.TextColor)">по умолчанию</option>
+                                    @foreach (var c in PostContentFormatting.AllowedTextColors.Where(c => c != "default"))
+                                    {
+                                        <option value="@c" selected="@(string.Equals(block.TextColor, c, StringComparison.OrdinalIgnoreCase))">@c</option>
+                                    }
+                                </select>
+                                <input type="hidden" name="NewTextBold" value="@(block.TextBold ? "true" : "false")" data-rt-flag />
+                                <input type="hidden" name="NewTextItalic" value="@(block.TextItalic ? "true" : "false")" data-rt-flag />
+                                <input type="hidden" name="NewTextUnderline" value="@(block.TextUnderline ? "true" : "false")" data-rt-flag />
+                                <input type="hidden" name="NewTextStrike" value="@(block.TextStrike ? "true" : "false")" data-rt-flag />
+                            </div>
+
+                            <textarea name="text" rows="5" class="form-control js-rt-source">@block.Text</textarea>
+
+                            <div class="rt-preview @previewClasses">
+                                <div class="js-rt-preview">@block.Text</div>
+                            </div>
+
+                            <button class="btn btn-sm btn-outline-primary mt-2">Сохранить</button>
                         </form>
                     }
                     else if (block.Type == PostContentBlockType.Image)
@@ -96,13 +184,71 @@
                             </form>
                         </div>
                     }
+                    else if (block.Type == PostContentBlockType.Gallery)
+                    {
+                        <div class="structure-gallery-editor">
+                            <form asp-action="UpdateGallery" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" asp-route-id="@block.Id" method="post" class="structure-edit-form">
+                                @Html.AntiForgeryToken()
+                                <label class="form-label">Галерея (@block.GalleryImages.Count шт.)</label>
+                                <div class="row g-2">
+                                    <div class="col-md-8">
+                                        <input name="galleryCaption" value="@block.GalleryCaption" maxlength="240" class="form-control" placeholder="Подпись галереи" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select name="galleryStyle" class="form-select">
+                                            @foreach (var g in Enum.GetValues<PostGalleryStyle>())
+                                            {
+                                                <option value="@((int)g)" selected="@(g == block.GalleryStyle)">@GalleryStyleName(g)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="gallery-editor-grid js-gallery-sort" data-order-input="#OrderedImages-@block.Id">
+                                    @foreach (var img in block.GalleryImages.OrderBy(i => i.Order))
+                                    {
+                                        <div class="gallery-editor-thumb" draggable="true" data-image-id="@img.Id">
+                                            <img src="@Url.Content(img.ImagePath)" alt="" />
+                                            <button type="submit"
+                                                    formaction="@Url.Action("DeleteGalleryImage", "PostContent", new { postId = Model.PostId, sectionId = containerId, id = block.Id, imageId = img.Id })"
+                                                    formmethod="post"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="Удалить">×</button>
+                                        </div>
+                                    }
+                                </div>
+                                <input type="hidden" id="OrderedImages-@block.Id" name="orderedImageIds" value="@string.Join(',', block.GalleryImages.OrderBy(i => i.Order).Select(i => i.Id))" />
+                                <button class="btn btn-sm btn-outline-primary mt-2">Сохранить галерею</button>
+                            </form>
+                        </div>
+                    }
                     else if (block.Type == PostContentBlockType.Section)
                     {
                         <div class="structure-section-link">
                             <span class="wiki-topic-placeholder">!</span>
-                            <div>
+                            <div style="flex:1">
                                 <strong>@(block.SectionTitle ?? "Под-пост")</strong>
-                                <p>Карточка-переход в подпост. Удаление блока уберёт карточку из этой структуры, сам подпост останется в базе.</p>
+                                <p>Карточка-переход в подпост. Удаление уберёт карточку из структуры, сам подпост останется.</p>
+                                <form asp-action="UpdateSectionDisplay" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" asp-route-id="@block.Id" method="post" class="structure-edit-form">
+                                    @Html.AntiForgeryToken()
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Стиль отображения</label>
+                                            <select name="displayStyle" class="form-select js-display-select">
+                                                @foreach (var d in Enum.GetValues<PostSectionDisplayStyle>())
+                                                {
+                                                    <option value="@((int)d)" selected="@(d == block.SectionDisplayStyle)">@DisplayName(d)</option>
+                                                }
+                                            </select>
+                                            <small class="text-muted">Как карточка будет показана посетителю.</small>
+                                        </div>
+                                        <div class="col-md-6 js-textlink-input" data-visible-when="@((int)PostSectionDisplayStyle.TextLink)">
+                                            <label class="form-label">Текст ссылки (необязательно)</label>
+                                            <input name="linkText" value="@block.SectionLinkText" maxlength="240" class="form-control" placeholder="@block.SectionTitle" />
+                                            <small class="text-muted">Пусто — используется название подпоста.</small>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary mt-2">Сохранить</button>
+                                </form>
                             </div>
                         </div>
                     }
@@ -111,15 +257,52 @@
         </section>
 
         <aside class="structure-tools">
-            <form asp-action="AddText" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" method="post" class="tool-card">
+            <form asp-action="AddText" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" method="post" class="tool-card js-rich-form">
                 @Html.AntiForgeryToken()
                 <h2>+ Текст</h2>
-                <div class="template-row">
-                    <button type="button" class="template-chip" data-template-target="#NewText" data-template="Заголовок&#10;Короткое описание раздела...">Заголовок</button>
-                    <button type="button" class="template-chip" data-template-target="#NewText" data-template="Факт: ">Факт</button>
-                    <button type="button" class="template-chip" data-template-target="#NewText" data-template="* Пункт 1&#10;* Пункт 2&#10;* Пункт 3">Список</button>
+
+                <div class="rich-toolbar" role="toolbar" aria-label="Форматирование">
+                    <button type="button" class="rt-btn js-rt-toggle" data-target="NewTextBold" title="Жирный"><b>Ж</b></button>
+                    <button type="button" class="rt-btn js-rt-toggle" data-target="NewTextItalic" title="Курсив"><i>К</i></button>
+                    <button type="button" class="rt-btn js-rt-toggle" data-target="NewTextUnderline" title="Подчёркнутый"><u>П</u></button>
+                    <button type="button" class="rt-btn js-rt-toggle" data-target="NewTextStrike" title="Зачёркнутый"><s>З</s></button>
+                    <select asp-for="NewTextSize" class="form-select form-select-sm" title="Размер">
+                        @foreach (var s in Enum.GetValues<PostTextSize>())
+                        {
+                            <option value="@((int)s)">@SizeName(s)</option>
+                        }
+                    </select>
+                    <select asp-for="NewTextAlign" class="form-select form-select-sm" title="Выравнивание">
+                        @foreach (var a in Enum.GetValues<PostTextAlign>())
+                        {
+                            <option value="@((int)a)">@AlignName(a)</option>
+                        }
+                    </select>
+                    <select asp-for="NewTextStyle" class="form-select form-select-sm" title="Стиль">
+                        @foreach (var st in Enum.GetValues<PostTextStyle>())
+                        {
+                            <option value="@((int)st)">@StyleName(st)</option>
+                        }
+                    </select>
+                    <select asp-for="NewTextColor" class="form-select form-select-sm" title="Цвет">
+                        <option value="">по умолчанию</option>
+                        @foreach (var c in PostContentFormatting.AllowedTextColors.Where(c => c != "default"))
+                        {
+                            <option value="@c">@c</option>
+                        }
+                    </select>
+                    <input type="hidden" asp-for="NewTextBold" data-rt-flag />
+                    <input type="hidden" asp-for="NewTextItalic" data-rt-flag />
+                    <input type="hidden" asp-for="NewTextUnderline" data-rt-flag />
+                    <input type="hidden" asp-for="NewTextStrike" data-rt-flag />
                 </div>
-                <textarea asp-for="NewText" rows="5" class="form-control" placeholder="Абзац, описание, правила, вступление..."></textarea>
+
+                <textarea asp-for="NewText" rows="5" id="NewText" class="form-control js-rt-source" placeholder="Абзац, описание, правила, вступление..."></textarea>
+
+                <div class="rt-preview">
+                    <div class="js-rt-preview">Здесь появится превью форматирования.</div>
+                </div>
+
                 <button class="btn btn-outline-primary mt-2">Добавить текст</button>
             </form>
 
@@ -133,7 +316,43 @@
                 <button class="btn btn-outline-primary mt-2">Загрузить фото</button>
             </form>
 
-            <form asp-action="AddExistingSection" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" method="post" class="tool-card">
+            <form asp-action="AddGallery" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" method="post" enctype="multipart/form-data" class="tool-card">
+                @Html.AntiForgeryToken()
+                <h2>+ Галерея</h2>
+                <input type="file" name="galleryFiles" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="form-control js-image-input" data-preview="#galleryImagePreview" />
+                <div class="row g-2 mt-2">
+                    <div class="col-md-7">
+                        <input asp-for="NewGalleryCaption" maxlength="240" class="form-control" placeholder="Общая подпись" />
+                    </div>
+                    <div class="col-md-5">
+                        <select asp-for="NewGalleryStyle" class="form-select">
+                            @foreach (var g in Enum.GetValues<PostGalleryStyle>())
+                            {
+                                <option value="@((int)g)">@GalleryStyleName(g)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div id="galleryImagePreview" class="image-preview-grid"></div>
+                <button class="btn btn-outline-primary mt-2">Создать галерею</button>
+            </form>
+
+            <div class="tool-card">
+                <h2>+ Шаблон</h2>
+                <p class="text-muted small">Готовые блоки: инфобокс, предупреждение, факт, лор и т.д. Можно редактировать как обычный текст.</p>
+                <div class="template-picker">
+                    @foreach (var t in Enum.GetValues<PostBlockTemplateType>().Where(x => x != PostBlockTemplateType.None))
+                    {
+                        <form asp-action="AddTemplate" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" method="post" class="template-picker-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="templateType" value="@((int)t)" />
+                            <button class="template-chip" type="submit" title="@TemplateName(t)">@TemplateName(t)</button>
+                        </form>
+                    }
+                </div>
+            </div>
+
+            <form asp-action="AddExistingSection" asp-route-postId="@Model.PostId" asp-route-sectionId="@containerId" method="post" class="tool-card js-section-picker-form">
                 @Html.AntiForgeryToken()
                 <h2>+ Под-пост в структуру</h2>
                 @if (Model.AvailableSections.Any())
@@ -144,7 +363,24 @@
                             <option value="@availableSection.Id">@availableSection.Title</option>
                         }
                     </select>
-                    <button class="btn btn-outline-primary mt-2">Вставить карточку</button>
+                    <label class="form-label mt-2">Стиль отображения</label>
+                    <select name="displayStyle" class="form-select js-display-select">
+                        @foreach (var d in Enum.GetValues<PostSectionDisplayStyle>())
+                        {
+                            <option value="@((int)d)">@DisplayName(d)</option>
+                        }
+                    </select>
+                    <div class="section-display-hints">
+                        <small class="text-muted">
+                            Карточка с иконкой — как раньше. По центру / слева / справа — выделяет подпост.
+                            Текст-ссылка — просто гиперссылка. Компактная строка — маленькая иконка + название.
+                        </small>
+                    </div>
+                    <div class="mt-2 js-textlink-input" data-visible-when="@((int)PostSectionDisplayStyle.TextLink)">
+                        <label class="form-label">Текст ссылки (для режима «текст-ссылка»)</label>
+                        <input name="linkText" maxlength="240" class="form-control" placeholder="Оставьте пустым чтобы использовать название" />
+                    </div>
+                    <button class="btn btn-outline-primary mt-2">Вставить</button>
                 }
                 else
                 {
@@ -154,3 +390,7 @@
         </aside>
     </div>
 </section>
+
+@section Scripts {
+    <script src="~/js/post-content-editor.js" asp-append-version="true"></script>
+}

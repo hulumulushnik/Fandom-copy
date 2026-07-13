@@ -1,0 +1,66 @@
+@model List<Fandom_copy.DTOs.Admin.AdminUserListItemDto>
+@{
+    ViewData["Title"] = "Користувачі";
+}
+
+<section class="profile-shell admin-shell">
+    <div class="wiki-back">
+        <a asp-action="Index">← Адмінка</a>
+    </div>
+
+    <div class="posts-heading">
+        <div>
+            <p class="wiki-kicker">Керування доступом</p>
+            <h1>Користувачі</h1>
+        </div>
+    </div>
+
+    @if (TempData["Error"] is string err)
+    {
+        <div class="alert alert-danger">@err</div>
+    }
+    @if (TempData["Message"] is string msg)
+    {
+        <div class="alert alert-success">@msg</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-structure">
+            <strong>Користувачів немає</strong>
+            <span>Список буде заповнено після реєстрації користувачів.</span>
+        </div>
+    }
+    else
+    {
+        <div class="posts-list">
+            @foreach (var user in Model)
+            {
+                <div class="post-row admin-row">
+                    <div class="post-row-thumb">
+                        <span class="wiki-topic-placeholder">@user.Login[..1].ToUpper()</span>
+                    </div>
+                    <div class="post-row-body">
+                        <div class="post-row-top">
+                            <h5>@user.Login</h5>
+                            <small class="post-row-date">@user.RegistrationDate.ToString("yyyy-MM-dd HH:mm")</small>
+                        </div>
+                        <p class="post-row-desc">@user.Email</p>
+                        <div class="post-row-meta">
+                            <span class="post-tag">@user.GlobalRole</span>
+                            <span class="post-tag @(user.IsBanned ? "admin-tag-danger" : "post-tag-public")">
+                                @(user.IsBanned ? "Забанений" : "Активний")
+                            </span>
+                        </div>
+                    </div>
+                    <form asp-action="ToggleBan" asp-route-id="@user.Id" method="post" class="admin-row-actions">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="secondary-btn @(user.IsBanned ? "" : "admin-danger-btn")">
+                            @(user.IsBanned ? "Розбанити" : "Забанити")
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+    }
+</section>

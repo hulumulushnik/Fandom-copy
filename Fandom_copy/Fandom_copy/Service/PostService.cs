@@ -8,17 +8,25 @@ namespace Fandom_copy.Services
     public class PostService : IPostService
     {
         private readonly ApplicationDbContext _db;
+        private readonly IPostVersionService _versions;
 
-        public PostService(ApplicationDbContext db)
+        public PostService(ApplicationDbContext db, IPostVersionService versions)
         {
             _db = db;
+            _versions = versions;
         }
 
-        public async Task<ServiceResult<List<PostDto>>> GetAllAsync(Guid? currentUserId)
+        public async Task<ServiceResult<List<PostDto>>> GetAllAsync(Guid? currentUserId, Guid? categoryId = null)
         {
             var query = _db.Posts
                 .Include(p => p.Category)
+                .Include(p => p.Tags)
                 .Where(p => !p.IsDeleted);
+
+            if (categoryId is not null)
+            {
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+            }
 
             if (currentUserId is null)
             {
@@ -44,11 +52,14 @@ namespace Fandom_copy.Services
         {
             var post = await _db.Posts
                 .Include(p => p.Category)
+                .Include(p => p.Tags)
                 // Loading the whole collection lets EF reconnect every level of
                 // the self-referencing section tree, not only one nested level.
                 .Include(p => p.Sections)
                 .Include(p => p.ContentBlocks)
                     .ThenInclude(b => b.Section)
+                .Include(p => p.ContentBlocks)
+                    .ThenInclude(b => b.GalleryImages)
                 .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
             if (post is null)
@@ -67,7 +78,13 @@ namespace Fandom_copy.Services
             if (!post.IsPublic && currentRole is null)
                 return ServiceResult<PostDto>.Fail("Немає доступу до цього поста");
 
-            return ServiceResult<PostDto>.Ok(PostDto.FromEntity(post, currentRole));
+            var ownerMember = await _db.PostMembers
+                .Include(m => m.User)
+                .FirstOrDefaultAsync(m => m.PostId == id && m.Role == PostRole.Owner);
+
+            var author = ownerMember?.User is null ? null : Fandom_copy.DTOs.Profile.AuthorCardDto.FromUser(ownerMember.User);
+
+            return ServiceResult<PostDto>.Ok(PostDto.FromEntity(post, currentRole, author));
         }
 
         public async Task<ServiceResult<PostDto>> CreateAsync(CreatePostDto dto, Guid authorId)
@@ -94,6 +111,7 @@ namespace Fandom_copy.Services
             };
 
             _db.Posts.Add(post);
+            await ApplyTagsAsync(post, dto.Tags);
 
             if (!string.IsNullOrWhiteSpace(post.Description))
             {
@@ -127,6 +145,7 @@ namespace Fandom_copy.Services
 
             var created = await _db.Posts
                 .Include(p => p.Category)
+                .Include(p => p.Tags)
                 .FirstAsync(p => p.Id == post.Id);
 
             return ServiceResult<PostDto>.Ok(PostDto.FromEntity(created, PostRole.Owner));
@@ -136,6 +155,7 @@ namespace Fandom_copy.Services
         {
             var post = await _db.Posts
                 .Include(p => p.Category)
+                .Include(p => p.Tags)
                 .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
             if (post is null)
@@ -151,6 +171,10 @@ namespace Fandom_copy.Services
             if (!categoryExists)
                 return ServiceResult<PostDto>.Fail("Категорію не знайдено");
 
+            var snapshot = await _versions.CaptureAsync(id, currentUserId, "PostUpdated");
+            if (!snapshot.Success)
+                return ServiceResult<PostDto>.Fail(snapshot.Error ?? "Не вдалося зберегти попередню версію");
+
             var oldDescription = post.Description;
             var newDescription = dto.Description?.Trim() ?? string.Empty;
 
@@ -159,6 +183,7 @@ namespace Fandom_copy.Services
             post.CategoryId = dto.CategoryId;
             post.IsPublic = dto.IsPublic;
             post.UpdatedAt = DateTime.UtcNow;
+            await ApplyTagsAsync(post, dto.Tags);
 
             var firstRootText = await _db.PostContentBlocks
                 .Where(b => b.PostId == post.Id && b.ContainerSectionId == null && b.Type == PostContentBlockType.Text)
@@ -215,6 +240,10 @@ namespace Fandom_copy.Services
             if (member is null || member.Role != PostRole.Owner)
                 return ServiceResult.Fail("Тільки власник може видалити пост");
 
+            var snapshot = await _versions.CaptureAsync(id, currentUserId, "PostDeleted");
+            if (!snapshot.Success)
+                return ServiceResult.Fail(snapshot.Error ?? "Не вдалося зберегти попередню версію");
+
             post.IsDeleted = true;
             post.UpdatedAt = DateTime.UtcNow;
 
@@ -230,6 +259,78 @@ namespace Fandom_copy.Services
             await _db.SaveChangesAsync();
 
             return ServiceResult.Ok();
+        }
+
+        public async Task<ServiceResult> DeleteAsAdminAsync(Guid id, Guid adminUserId)
+        {
+            var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id);
+            if (post is null)
+                return ServiceResult.Fail("Пост не знайдено");
+
+            if (post.IsDeleted)
+                return ServiceResult.Fail("Пост уже видалено");
+
+            post.IsDeleted = true;
+            post.UpdatedAt = DateTime.UtcNow;
+
+            _db.PostHistories.Add(new PostHistory
+            {
+                Id = Guid.NewGuid(),
+                PostId = post.Id,
+                UserId = adminUserId,
+                Action = "DeletedByAdmin",
+                Date = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+
+            return ServiceResult.Ok();
+        }
+
+        private async Task ApplyTagsAsync(Post post, List<string>? tagInputs)
+        {
+            var names = NormalizeTagNames(tagInputs);
+
+            post.Tags.Clear();
+            if (names.Count == 0)
+                return;
+
+            var loweredNames = names.Select(n => n.ToLower()).ToList();
+            var existingTags = await _db.Tags
+                .Where(t => loweredNames.Contains(t.Name.ToLower()))
+                .ToListAsync();
+
+            foreach (var name in names)
+            {
+                var tag = existingTags.FirstOrDefault(t =>
+                    string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase));
+
+                if (tag is null)
+                {
+                    tag = new Tag
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = name
+                    };
+
+                    _db.Tags.Add(tag);
+                    existingTags.Add(tag);
+                }
+
+                post.Tags.Add(tag);
+            }
+        }
+
+        private static List<string> NormalizeTagNames(List<string>? tagInputs)
+        {
+            return (tagInputs ?? new List<string>())
+                .SelectMany(input => (input ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(20)
+                .ToList();
         }
 
         // -----------------------------------------------------------------

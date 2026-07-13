@@ -1,0 +1,39 @@
+@model Fandom_copy.DTOs.Admin.AdminCategoryFormDto
+@{
+    ViewData["Title"] = "Редагувати категорію";
+}
+
+<section class="profile-shell admin-shell">
+    <div class="wiki-back">
+        <a asp-action="Categories">← Категорії</a>
+    </div>
+
+    <div class="posts-heading">
+        <div>
+            <p class="wiki-kicker">Структура вікі</p>
+            <h1>Редагувати категорію</h1>
+        </div>
+    </div>
+
+    <article class="profile-card admin-form-card">
+        <form asp-action="EditCategory" asp-route-id="@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="form-error"></div>
+            <input asp-for="Id" type="hidden" />
+            <label asp-for="Name">Назва</label>
+            <input asp-for="Name" />
+            <span asp-validation-for="Name" class="form-error"></span>
+            <label asp-for="Description">Опис</label>
+            <textarea asp-for="Description" rows="4"></textarea>
+            <span asp-validation-for="Description" class="form-error"></span>
+            <div class="admin-form-actions">
+                <button type="submit" class="primary-btn">Зберегти</button>
+                <a asp-action="Categories" class="secondary-btn">Скасувати</a>
+            </div>
+        </form>
+    </article>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,197 @@
+@using Fandom_copy.DTOs.Posts
+@using Fandom_copy.Models
+@using Fandom_copy.Services
+@model Fandom_copy.Views.Posts.ContentBlocksModel
+@{
+    var blocks = Model.Blocks;
+    var sectionLookup = Model.SectionLookup;
+    var postId = Model.PostId;
+    var fallback = Model.FallbackTitle;
+
+    string TextClasses(PostContentBlockDto b)
+    {
+        var parts = new List<string> {
+            PostContentFormatting.TextSizeClass(b.TextSize),
+            PostContentFormatting.TextAlignClass(b.TextAlign),
+            PostContentFormatting.TextStyleClass(b.TextStyle)
+        };
+        var color = PostContentFormatting.TextColorClass(b.TextColor);
+        if (!string.IsNullOrEmpty(color)) parts.Add(color);
+        if (b.TextBold) parts.Add("wiki-text-bold");
+        if (b.TextItalic) parts.Add("wiki-text-italic");
+        if (b.TextUnderline) parts.Add("wiki-text-underline");
+        if (b.TextStrike) parts.Add("wiki-text-strike");
+        return string.Join(' ', parts);
+    }
+
+    var i = 0;
+    while (i < blocks.Count)
+    {
+        var b = blocks[i];
+
+        if (b.Type == PostContentBlockType.Text)
+        {
+            <div class="wiki-copy @TextClasses(b)">
+                @foreach (var line in b.Text.Split('\n'))
+                {
+                    <div>@line</div>
+                }
+            </div>
+            i++;
+        }
+        else if (b.Type == PostContentBlockType.Template)
+        {
+            var cls = PostContentFormatting.TemplateClass(b.TemplateType);
+            if (b.TemplateType == PostBlockTemplateType.Divider)
+            {
+                <hr class="@cls" />
+            }
+            else
+            {
+                <aside class="@cls">
+                    <div class="wiki-template-label">@PostContentFormatting.TemplateLabel(b.TemplateType)</div>
+                    <div class="wiki-template-body @TextClasses(b)">
+                        @foreach (var line in b.Text.Split('\n'))
+                        {
+                            <div>@line</div>
+                        }
+                    </div>
+                </aside>
+            }
+            i++;
+        }
+        else if (b.Type == PostContentBlockType.Image && !string.IsNullOrWhiteSpace(b.ImagePath))
+        {
+            <figure class="wiki-image-block">
+                <img src="@Url.Content(b.ImagePath)" alt="@(string.IsNullOrWhiteSpace(b.ImageCaption) ? fallback : b.ImageCaption)" />
+                @if (!string.IsNullOrWhiteSpace(b.ImageCaption))
+                {
+                    <figcaption>@b.ImageCaption</figcaption>
+                }
+            </figure>
+            i++;
+        }
+        else if (b.Type == PostContentBlockType.Gallery && b.GalleryImages.Any())
+        {
+            <figure class="@PostContentFormatting.GalleryClass(b.GalleryStyle)">
+                <div class="wiki-gallery-track">
+                    @foreach (var img in b.GalleryImages.OrderBy(g => g.Order))
+                    {
+                        <div class="wiki-gallery-item">
+                            <img src="@Url.Content(img.ImagePath)" alt="@(string.IsNullOrWhiteSpace(img.Caption) ? b.GalleryCaption : img.Caption)" loading="lazy" />
+                        </div>
+                    }
+                </div>
+                @if (!string.IsNullOrWhiteSpace(b.GalleryCaption))
+                {
+                    <figcaption>@b.GalleryCaption</figcaption>
+                }
+            </figure>
+            i++;
+        }
+        else if (b.Type == PostContentBlockType.Section && b.SectionId is Guid)
+        {
+            // Grouped grid for CardWithIcon runs.
+            if (b.SectionDisplayStyle == PostSectionDisplayStyle.CardWithIcon)
+            {
+                <div class="wiki-topic-grid">
+                    @while (i < blocks.Count
+                        && blocks[i].Type == PostContentBlockType.Section
+                        && blocks[i].SectionId is Guid
+                        && blocks[i].SectionDisplayStyle == PostSectionDisplayStyle.CardWithIcon)
+                    {
+                        var topicBlock = blocks[i];
+                        var topicSectionId = topicBlock.SectionId!.Value;
+                        var section = sectionLookup.GetValueOrDefault(topicSectionId);
+                        var iconPath = topicBlock.SectionIconPath ?? section?.IconPath ?? section?.PrimaryImagePath;
+                        var linkText = string.IsNullOrWhiteSpace(topicBlock.SectionLinkText) ? (topicBlock.SectionTitle ?? "Под-пост") : topicBlock.SectionLinkText;
+                        <a class="wiki-topic-card" asp-controller="PostSections" asp-action="Details" asp-route-postId="@postId" asp-route-id="@topicSectionId">
+                            <span class="wiki-topic-art">
+                                @if (!string.IsNullOrWhiteSpace(iconPath))
+                                {
+                                    <img src="@Url.Content(iconPath)" alt="@linkText" />
+                                }
+                                else
+                                {
+                                    <span class="wiki-topic-placeholder">!</span>
+                                }
+                            </span>
+                            <strong>@linkText</strong>
+                            <small>Открыть под-пост →</small>
+                        </a>
+                        i++;
+                    }
+                </div>
+            }
+            else if (b.SectionDisplayStyle == PostSectionDisplayStyle.CompactRow)
+            {
+                <ul class="wiki-topic-compact-list">
+                    @while (i < blocks.Count
+                        && blocks[i].Type == PostContentBlockType.Section
+                        && blocks[i].SectionId is Guid
+                        && blocks[i].SectionDisplayStyle == PostSectionDisplayStyle.CompactRow)
+                    {
+                        var topicBlock = blocks[i];
+                        var topicSectionId = topicBlock.SectionId!.Value;
+                        var section = sectionLookup.GetValueOrDefault(topicSectionId);
+                        var iconPath = topicBlock.SectionIconPath ?? section?.IconPath ?? section?.PrimaryImagePath;
+                        var linkText = string.IsNullOrWhiteSpace(topicBlock.SectionLinkText) ? (topicBlock.SectionTitle ?? "Под-пост") : topicBlock.SectionLinkText;
+                        <li>
+                            <a class="wiki-topic-compact" asp-controller="PostSections" asp-action="Details" asp-route-postId="@postId" asp-route-id="@topicSectionId">
+                                <span class="wiki-topic-compact-icon">
+                                    @if (!string.IsNullOrWhiteSpace(iconPath))
+                                    {
+                                        <img src="@Url.Content(iconPath)" alt="" />
+                                    }
+                                    else
+                                    {
+                                        <span class="wiki-topic-placeholder">·</span>
+                                    }
+                                </span>
+                                <span>@linkText</span>
+                            </a>
+                        </li>
+                        i++;
+                    }
+                </ul>
+            }
+            else
+            {
+                var topicBlock = b;
+                var topicSectionId = topicBlock.SectionId!.Value;
+                var section = sectionLookup.GetValueOrDefault(topicSectionId);
+                var iconPath = topicBlock.SectionIconPath ?? section?.IconPath ?? section?.PrimaryImagePath;
+                var linkText = string.IsNullOrWhiteSpace(topicBlock.SectionLinkText) ? (topicBlock.SectionTitle ?? "Под-пост") : topicBlock.SectionLinkText;
+
+                if (topicBlock.SectionDisplayStyle == PostSectionDisplayStyle.TextLink)
+                {
+                    <p class="wiki-topic-textlink">
+                        <a asp-controller="PostSections" asp-action="Details" asp-route-postId="@postId" asp-route-id="@topicSectionId">→ @linkText</a>
+                    </p>
+                }
+                else
+                {
+                    <a class="@PostContentFormatting.SectionDisplayClass(topicBlock.SectionDisplayStyle)" asp-controller="PostSections" asp-action="Details" asp-route-postId="@postId" asp-route-id="@topicSectionId">
+                        <span class="wiki-topic-art">
+                            @if (!string.IsNullOrWhiteSpace(iconPath))
+                            {
+                                <img src="@Url.Content(iconPath)" alt="@linkText" />
+                            }
+                            else
+                            {
+                                <span class="wiki-topic-placeholder">!</span>
+                            }
+                        </span>
+                        <strong>@linkText</strong>
+                        <small>Открыть под-пост →</small>
+                    </a>
+                }
+                i++;
+            }
+        }
+        else
+        {
+            i++;
+        }
+    }
+}

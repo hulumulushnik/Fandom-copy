@@ -1,9 +1,11 @@
 using Fandom_copy.Data;
 using Fandom_copy.DTOs.Auth;
+using Fandom_copy.DTOs.Posts;
 using Fandom_copy.DTOs.Profile;
 using Fandom_copy.Models;
 using Fandom_copy.Services.Email;
 using Fandom_copy.Services.Security;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -17,12 +19,18 @@ namespace Fandom_copy.Services
         private readonly ApplicationDbContext _db;
         private readonly IEmailService _emailService;
         private readonly AppSettings _appSettings;
+        private readonly IProfileImageStorage _profileImages;
 
-        public UserService(ApplicationDbContext db, IEmailService emailService, IOptions<AppSettings> appSettings)
+        public UserService(
+            ApplicationDbContext db,
+            IEmailService emailService,
+            IOptions<AppSettings> appSettings,
+            IProfileImageStorage profileImages)
         {
             _db = db;
             _emailService = emailService;
             _appSettings = appSettings.Value;
+            _profileImages = profileImages;
         }
 
         public async Task<ServiceResult<User>> RegisterAsync(RegisterRequestDto dto)
@@ -70,12 +78,12 @@ namespace Fandom_copy.Services
             if (user is null)
                 return ServiceResult<User>.Fail("Невірний логін/email або пароль");
 
-            if (user.IsBanned)
-                return ServiceResult<User>.Fail("Акаунт заблоковано");
-
             bool passwordOk = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
             if (!passwordOk)
                 return ServiceResult<User>.Fail("Невірний логін/email або пароль");
+
+            if (user.IsBanned)
+                return ServiceResult<User>.Fail("Акаунт заблоковано");
 
             // Пошту можна не підтверджувати, щоб не блокувати вхід новим користувачам,
             // фронтенд може показати банер "підтвердіть email" за user.EmailConfirmed.
@@ -283,6 +291,133 @@ namespace Fandom_copy.Services
             await _db.SaveChangesAsync();
 
             return ServiceResult.Ok();
+        }
+
+        public async Task<ServiceResult<UserProfileDto>> UpdateAvatarAsync(Guid userId, IFormFile? file)
+        {
+            var user = await _db.Users.FindAsync(userId);
+            if (user is null)
+                return ServiceResult<UserProfileDto>.Fail("Користувача не знайдено");
+
+            var saveResult = await _profileImages.SaveAvatarAsync(userId, file);
+            if (!saveResult.Success)
+                return ServiceResult<UserProfileDto>.Fail(saveResult.Error!);
+
+            var previousAvatar = user.AvatarUrl;
+            user.AvatarUrl = saveResult.RelativePath;
+            await _db.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(previousAvatar))
+                _profileImages.Delete(previousAvatar);
+
+            return ServiceResult<UserProfileDto>.Ok(UserProfileDto.FromUser(user));
+        }
+
+        public async Task<ServiceResult<UserProfileDto>> RemoveAvatarAsync(Guid userId)
+        {
+            var user = await _db.Users.FindAsync(userId);
+            if (user is null)
+                return ServiceResult<UserProfileDto>.Fail("Користувача не знайдено");
+
+            var previousAvatar = user.AvatarUrl;
+            user.AvatarUrl = null;
+            await _db.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(previousAvatar))
+                _profileImages.Delete(previousAvatar);
+
+            return ServiceResult<UserProfileDto>.Ok(UserProfileDto.FromUser(user));
+        }
+
+        public async Task<ServiceResult<UserProfileDto>> UpdateBackgroundAsync(Guid userId, IFormFile? file)
+        {
+            var user = await _db.Users.FindAsync(userId);
+            if (user is null)
+                return ServiceResult<UserProfileDto>.Fail("Користувача не знайдено");
+
+            var saveResult = await _profileImages.SaveBackgroundAsync(userId, file);
+            if (!saveResult.Success)
+                return ServiceResult<UserProfileDto>.Fail(saveResult.Error!);
+
+            var previousBackground = user.BackgroundUrl;
+            user.BackgroundUrl = saveResult.RelativePath;
+            await _db.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(previousBackground))
+                _profileImages.Delete(previousBackground);
+
+            return ServiceResult<UserProfileDto>.Ok(UserProfileDto.FromUser(user));
+        }
+
+        public async Task<ServiceResult<UserProfileDto>> RemoveBackgroundAsync(Guid userId)
+        {
+            var user = await _db.Users.FindAsync(userId);
+            if (user is null)
+                return ServiceResult<UserProfileDto>.Fail("Користувача не знайдено");
+
+            var previousBackground = user.BackgroundUrl;
+            user.BackgroundUrl = null;
+            await _db.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(previousBackground))
+                _profileImages.Delete(previousBackground);
+
+            return ServiceResult<UserProfileDto>.Ok(UserProfileDto.FromUser(user));
+        }
+
+        public async Task<ServiceResult<UserProfileDto>> UpdateFrameAsync(Guid userId, ProfileFrame frame)
+        {
+            var user = await _db.Users.FindAsync(userId);
+            if (user is null)
+                return ServiceResult<UserProfileDto>.Fail("Користувача не знайдено");
+
+            if (!Enum.IsDefined(typeof(ProfileFrame), frame))
+                return ServiceResult<UserProfileDto>.Fail("Невідома рамка профілю");
+
+            user.ProfileFrame = frame;
+            await _db.SaveChangesAsync();
+
+            return ServiceResult<UserProfileDto>.Ok(UserProfileDto.FromUser(user));
+        }
+
+        public Task<ServiceResult<PublicProfileDto>> GetPublicProfileAsync(string login, Guid? viewerId)
+        {
+            var normalizedLogin = (login ?? string.Empty).Trim();
+            return BuildPublicProfileAsync(u => u.Login == normalizedLogin, viewerId);
+        }
+
+        public Task<ServiceResult<PublicProfileDto>> GetPublicProfileByIdAsync(Guid userId, Guid? viewerId)
+        {
+            return BuildPublicProfileAsync(u => u.Id == userId, viewerId);
+        }
+
+        private async Task<ServiceResult<PublicProfileDto>> BuildPublicProfileAsync(
+            System.Linq.Expressions.Expression<Func<User, bool>> predicate, Guid? viewerId)
+        {
+            var user = await _db.Users.FirstOrDefaultAsync(predicate);
+            if (user is null)
+                return ServiceResult<PublicProfileDto>.Fail("Користувача не знайдено");
+
+            var ownedPostIds = await _db.PostMembers
+                .Where(m => m.UserId == user.Id && m.Role == PostRole.Owner)
+                .Select(m => m.PostId)
+                .ToListAsync();
+
+            var postsQuery = _db.Posts
+                .Include(p => p.Category)
+                .Where(p => ownedPostIds.Contains(p.Id) && !p.IsDeleted);
+
+            postsQuery = viewerId == user.Id
+                ? postsQuery // власник бачить усі свої пости, включно з приватними
+                : postsQuery.Where(p => p.IsPublic);
+
+            var posts = await postsQuery
+                .OrderByDescending(p => p.UpdatedAt)
+                .ToListAsync();
+
+            var postDtos = posts.Select(p => PostDto.FromEntity(p)).ToList();
+
+            return ServiceResult<PublicProfileDto>.Ok(PublicProfileDto.FromUser(user, postDtos));
         }
 
         private static void SetEmailConfirmationToken(User user)

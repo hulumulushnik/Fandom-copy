@@ -17,20 +17,32 @@ namespace Fandom_copy.Controllers
         private readonly IPostService _postService;
         private readonly ApplicationDbContext _db;
         private readonly IPostImageStorage _imageStorage;
+        private readonly IPostVersionService _versions;
 
-        public PostsController(IPostService postService, ApplicationDbContext db, IPostImageStorage imageStorage)
+        public PostsController(IPostService postService, ApplicationDbContext db, IPostImageStorage imageStorage, IPostVersionService versions)
         {
             _postService = postService;
             _db = db;
             _imageStorage = imageStorage;
+            _versions = versions;
         }
 
-        // GET /posts
+        // GET /posts?categoryId=...
         [HttpGet("")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(Guid? categoryId)
         {
             var userId = TryGetCurrentUserId();
-            var result = await _postService.GetAllAsync(userId);
+            var result = await _postService.GetAllAsync(userId, categoryId);
+
+            if (categoryId is not null)
+            {
+                ViewBag.CategoryId = categoryId;
+                ViewBag.CategoryName = await _db.Categories
+                    .Where(c => c.Id == categoryId.Value)
+                    .Select(c => c.Name)
+                    .FirstOrDefaultAsync();
+            }
+
             return View(result.Data ?? new List<PostDto>());
         }
 
@@ -49,7 +61,30 @@ namespace Fandom_copy.Controllers
             ViewBag.IsSaved = userId is not null &&
                 await _db.SavedPosts.AnyAsync(s => s.PostId == id && s.UserId == userId.Value);
 
+            if (userId is not null && result.Data!.CanManageMembers)
+            {
+                var versions = await _versions.GetVersionsAsync(id, userId.Value);
+                ViewBag.PostVersions = versions.Data ?? new List<PostVersionDto>();
+            }
+
             return View(result.Data);
+        }
+
+        // POST /posts/{id}/versions/{versionId}/restore
+        [HttpPost("{id:guid}/versions/{versionId:guid}/restore")]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RestoreVersion(Guid id, Guid versionId)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _versions.RestoreAsync(id, versionId, userId);
+
+            if (!result.Success)
+                TempData["Error"] = result.Error;
+            else
+                TempData["Message"] = "Пост відновлено до вибраної версії";
+
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         // GET /posts/search?q=...
@@ -84,10 +119,12 @@ namespace Fandom_copy.Controllers
                 var matches = await visible
                     .Include(p => p.Category)
                     .Include(p => p.Sections)
+                    .Include(p => p.Tags)
                     .Where(p =>
                         p.Title.ToLower().Contains(lowered) ||
                         p.Description.ToLower().Contains(lowered) ||
                         p.Category.Name.ToLower().Contains(lowered) ||
+                        p.Tags.Any(t => t.Name.ToLower().Contains(lowered)) ||
                         p.Sections.Any(s => s.Title.ToLower().Contains(lowered) || s.Text.ToLower().Contains(lowered)))
                     .OrderByDescending(p => p.UpdatedAt)
                     .Take(40)
@@ -128,7 +165,16 @@ namespace Fandom_copy.Controllers
                         }
                         else
                         {
-                            dto.Snippet = p.Description;
+                            var tag = p.Tags.FirstOrDefault(t => t.Name.ToLower().Contains(lowered));
+                            if (tag is not null)
+                            {
+                                dto.MatchedIn = "Tag";
+                                dto.Snippet = tag.Name;
+                            }
+                            else
+                            {
+                                dto.Snippet = p.Description;
+                            }
                         }
                     }
 
@@ -198,6 +244,7 @@ namespace Fandom_copy.Controllers
 
             var posts = await _db.Posts
                 .Include(p => p.Category)
+                .Include(p => p.Tags)
                 .Where(p => savedIds.Contains(p.Id) && !p.IsDeleted)
                 .ToListAsync();
 
@@ -284,6 +331,7 @@ namespace Fandom_copy.Controllers
                 Title = result.Data!.Title,
                 Description = result.Data.Description,
                 CategoryId = result.Data.CategoryId,
+                Tags = result.Data.TagNames,
                 IsPublic = result.Data.IsPublic
             };
 
@@ -506,9 +554,6 @@ namespace Fandom_copy.Controllers
 
             if (removeIcon)
             {
-                if (!string.IsNullOrWhiteSpace(post.IconPath))
-                    _imageStorage.Delete(post.IconPath);
-
                 post.IconPath = null;
                 post.UpdatedAt = DateTime.UtcNow;
                 await _db.SaveChangesAsync();
@@ -518,9 +563,6 @@ namespace Fandom_copy.Controllers
             var saved = await _imageStorage.SaveAsync(postId, iconFile);
             if (!saved.Success)
                 return ServiceResult.Fail(saved.Error ?? "Не вдалося завантажити іконку");
-
-            if (!string.IsNullOrWhiteSpace(post.IconPath))
-                _imageStorage.Delete(post.IconPath);
 
             post.IconPath = saved.RelativePath;
             post.UpdatedAt = DateTime.UtcNow;
