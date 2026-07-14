@@ -2,23 +2,24 @@
 @using Fandom_copy.Models
 @model CategoryDetailsDto
 @{
+    var currentLang = UiText.Normalize(Context.Request.Cookies[SettingsController.LangCookie]);
     ViewData["Title"] = Model.Name;
 }
 
 <div class="wiki-back">
-    <a asp-controller="Categories" asp-action="Index">← Усі категорії</a>
+    <a asp-controller="Categories" asp-action="Index">← @UiText.T(currentLang, "categories.all")</a>
 </div>
 
 <div class="posts-heading">
     <div>
-        <p class="wiki-kicker">Категорія</p>
+        <p class="wiki-kicker">@UiText.T(currentLang, "categories.single")</p>
         <h1>@Model.Name</h1>
         @if (!string.IsNullOrWhiteSpace(Model.Description))
         {
             <p class="category-detail-desc">@Model.Description</p>
         }
     </div>
-    <a asp-controller="Posts" asp-action="Index" asp-route-categoryId="@Model.Id" class="btn btn-primary">Усі пости категорії</a>
+    <a asp-controller="Posts" asp-action="Index" asp-route-categoryId="@Model.Id" class="btn btn-primary">@UiText.T(currentLang, "categories.all_posts_of")</a>
 </div>
 
 @if (TempData["Error"] is string err)
@@ -33,8 +34,8 @@
 @if (!Model.Posts.Any())
 {
     <div class="empty-structure">
-        <strong>У цій категорії ще немає постів</strong>
-        <span>Станьте першим — створіть пост у цій категорії.</span>
+        <strong>@UiText.T(currentLang, "categories.no_posts")</strong>
+        <span>@UiText.T(currentLang, "categories.no_posts_hint")</span>
     </div>
 }
 else
@@ -72,7 +73,7 @@ else
                     }
                     <div class="post-row-meta">
                         <span class="post-tag @(p.IsPublic ? "post-tag-public" : "post-tag-private")">
-                            @(p.IsPublic ? "Публічний" : "Приватний")
+                            @(p.IsPublic ? UiText.T(currentLang, "posts.public") : UiText.T(currentLang, "posts.private"))
                         </span>
                     </div>
                 </div>

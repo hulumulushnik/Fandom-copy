@@ -1,16 +1,17 @@
 @using Fandom_copy.DTOs.Posts
 @model CreatePostSectionDto
 @{
-    ViewData["Title"] = "Створити підпост";
+    var currentLang = UiText.Normalize(Context.Request.Cookies[SettingsController.LangCookie]);
+    ViewData["Title"] = UiText.T(currentLang, "subpost.create_title");
     var postId = (Guid)ViewBag.PostId;
     var parentTitle = ViewBag.ParentSectionTitle as string;
 }
 
 <section class="editor-page">
     <div class="editor-heading">
-        <p class="wiki-kicker">Новый раздел страницы</p>
-        <h1>Створити підпост</h1>
-        <p>Подпост станет отдельной Fandom-страницей и карточкой в структуре родителя.</p>
+        <p class="wiki-kicker">@UiText.T(currentLang, "subpost.new_section")</p>
+        <h1>@UiText.T(currentLang, "subpost.create_title")</h1>
+        <p>@UiText.T(currentLang, "subpost.create_intro")</p>
     </div>
 
     <form asp-action="Create" asp-route-postId="@postId" method="post" enctype="multipart/form-data" class="editor-card">
@@ -24,10 +25,10 @@
         @if (Model.ParentSectionId is not null && Model.ParentSectionId != Guid.Empty)
         {
             <div class="alert alert-info">
-                Створюється як вкладений підпост
+                @UiText.T(currentLang, "subpost.nested_in")
                 @if (!string.IsNullOrEmpty(parentTitle))
                 {
-                    <span>у <strong>@parentTitle</strong></span>
+                    <span>@UiText.T(currentLang, "subpost.nested_in_prefix") <strong>@parentTitle</strong></span>
                 }
             </div>
         }
@@ -35,19 +36,19 @@
         <div class="editor-two-columns">
             <div class="editor-main-column">
                 <div class="mb-3">
-                    <label asp-for="Title" class="form-label">Заголовок</label>
-                    <input asp-for="Title" class="form-control" placeholder="Например: Weapons, Characters, Locations" />
+                    <label asp-for="Title" class="form-label">@UiText.T(currentLang, "subpost.title_field")</label>
+                    <input asp-for="Title" class="form-control" placeholder="@UiText.T(currentLang, "subpost.title_placeholder")" />
                     <span asp-validation-for="Title" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Text" class="form-label">Первый текстовый блок</label>
-                    <textarea asp-for="Text" class="form-control" rows="12" placeholder="Основной текст подпоста..."></textarea>
+                    <label asp-for="Text" class="form-label">@UiText.T(currentLang, "subpost.first_text_block")</label>
+                    <textarea asp-for="Text" class="form-control" rows="12" placeholder="@UiText.T(currentLang, "subpost.base_text_placeholder")"></textarea>
                     <span asp-validation-for="Text" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Order" class="form-label">Порядок</label>
+                    <label asp-for="Order" class="form-label">@UiText.T(currentLang, "subpost.order")</label>
                     <input asp-for="Order" type="number" class="form-control" />
                     <span asp-validation-for="Order" class="text-danger"></span>
                 </div>
@@ -55,43 +56,43 @@
 
             <aside class="editor-side-column">
                 <div class="media-uploader">
-                    <h2>Іконка підпоста</h2>
-                    <p>Значок картки цього підпоста в структурі. Не потрапляє у текст — окреме зображення.</p>
+                    <h2>@UiText.T(currentLang, "subpost.icon")</h2>
+                    <p>@UiText.T(currentLang, "subpost.icon_create_hint")</p>
                     <input type="file" name="iconFile" accept="image/png,image/jpeg,image/gif,image/webp" class="form-control js-image-input" data-preview="#sectionCreateIconPreview" />
-                    <small class="text-muted">Якщо не вибрати — буде використано перше фото з тексту, або заглушка.</small>
+                    <small class="text-muted">@UiText.T(currentLang, "subpost.icon_fallback")</small>
                     <div id="sectionCreateIconPreview" class="image-preview-grid"></div>
                 </div>
 
                 <div class="media-uploader mt-3">
-                    <h2>Фото подпоста</h2>
-                    <p>Выбранные изображения будут добавлены в структуру этого подпоста сразу после первого текста.</p>
+                    <h2>@UiText.T(currentLang, "subpost.photos_title")</h2>
+                    <p>@UiText.T(currentLang, "subpost.photos_create_hint")</p>
                     <input type="file" name="imageFiles" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="form-control js-image-input" data-preview="#sectionCreateImagePreview" />
-                    <input type="text" name="imageCaption" maxlength="240" class="form-control mt-2" placeholder="Общая подпись к фото" />
-                    <small class="text-muted">Якщо вище задано іконку, вона матиме пріоритет над мініатюрою.</small>
+                    <input type="text" name="imageCaption" maxlength="240" class="form-control mt-2" placeholder="@UiText.T(currentLang, "subpost.photo_caption_short")" />
+                    <small class="text-muted">@UiText.T(currentLang, "subpost.icon_priority")</small>
                     <div id="sectionCreateImagePreview" class="image-preview-grid"></div>
                 </div>
 
                 <div class="media-uploader mt-3">
-                    <h2>Файли підпоста</h2>
-                    <p>Додайте матеріали для завантаження: PDF, TXT, ZIP, DOCX, XLSX, PNG або JPG.</p>
+                    <h2>@UiText.T(currentLang, "subpost.files_title")</h2>
+                    <p>@UiText.T(currentLang, "subpost.files_create_hint")</p>
                     <input type="file" name="attachmentFiles" accept=".pdf,.txt,.zip,.docx,.xlsx,.png,.jpg" multiple class="form-control" />
-                    <small class="text-muted">Максимальний розмір одного файлу — 15 МБ.</small>
+                    <small class="text-muted">@UiText.T(currentLang, "subpost.files_max_size")</small>
                 </div>
             </aside>
         </div>
 
         <div class="editor-actions">
-            <button type="submit" class="btn btn-primary">Створити</button>
+            <button type="submit" class="btn btn-primary">@UiText.T(currentLang, "subpost.create_button")</button>
             @if (Model.ParentSectionId is not null && Model.ParentSectionId != Guid.Empty)
             {
                 <a asp-controller="PostSections" asp-action="Details"
                    asp-route-postId="@postId" asp-route-id="@Model.ParentSectionId"
-                   class="btn btn-outline-secondary">Скасувати</a>
+                   class="btn btn-outline-secondary">@UiText.T(currentLang, "subpost.cancel")</a>
             }
             else
             {
                 <a asp-controller="Posts" asp-action="Details" asp-route-id="@postId"
-                   class="btn btn-outline-secondary">Скасувати</a>
+                   class="btn btn-outline-secondary">@UiText.T(currentLang, "subpost.cancel")</a>
             }
         </div>
     </form>

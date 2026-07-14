@@ -4318,11 +4318,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\user\\Source\\Repos\\Fandom-copy\\Fandom_copy\\Fandom_copy\\Fandom_copy.csproj",
+      "projectUniqueName": "C:\\Users\\user\\source\\repos\\Fandom-copy\\Fandom_copy\\Fandom_copy\\Fandom_copy.csproj",
       "projectName": "Fandom_copy",
-      "projectPath": "C:\\Users\\user\\Source\\Repos\\Fandom-copy\\Fandom_copy\\Fandom_copy\\Fandom_copy.csproj",
+      "projectPath": "C:\\Users\\user\\source\\repos\\Fandom-copy\\Fandom_copy\\Fandom_copy\\Fandom_copy.csproj",
       "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\user\\Source\\Repos\\Fandom-copy\\Fandom_copy\\Fandom_copy\\obj\\",
+      "outputPath": "C:\\Users\\user\\source\\repos\\Fandom-copy\\Fandom_copy\\Fandom_copy\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

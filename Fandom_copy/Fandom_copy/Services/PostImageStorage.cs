@@ -21,10 +21,10 @@ public sealed class PostImageStorage : IPostImageStorage
     public async Task<ImageSaveResult> SaveAsync(Guid postId, IFormFile? file)
     {
         if (file is null || file.Length == 0)
-            return ImageSaveResult.Fail("Выберите изображение.");
+            return ImageSaveResult.Fail("Оберіть зображення.");
 
         if (file.Length > MaxImageBytes)
-            return ImageSaveResult.Fail("Изображение слишком большое. Максимум — 5 МБ.");
+            return ImageSaveResult.Fail("Зображення слишком большое. Максимум — 5 МБ.");
 
         var extension = Path.GetExtension(file.FileName);
         if (!AllowedImageExtensions.Contains(extension))
@@ -32,7 +32,7 @@ public sealed class PostImageStorage : IPostImageStorage
 
         if (!string.IsNullOrWhiteSpace(file.ContentType) &&
             !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-            return ImageSaveResult.Fail("Файл должен быть изображением.");
+            return ImageSaveResult.Fail("Файл має бути зображенням.");
 
         var webRoot = GetWebRoot();
         var relativeFolder = Path.Combine("uploads", "posts", postId.ToString("N"));

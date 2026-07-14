@@ -1,0 +1,54 @@
+@using Fandom_copy.DTOs.Posts
+@model List<PostVersionDto>
+@{
+    var post = ViewBag.Post as PostDto;
+    ViewData["Title"] = "Резервні копії — " + (post?.Title ?? "Пост");
+}
+
+<nav class="wiki-back">
+    <a asp-action="Details" asp-route-id="@post?.Id">← До поста «@post?.Title»</a>
+</nav>
+
+@if (TempData["Error"] is string err) { <div class="alert alert-danger">@err</div> }
+@if (TempData["Message"] is string msg) { <div class="alert alert-success">@msg</div> }
+
+<section class="post-version-panel">
+    <div class="post-version-heading">
+        <div>
+            <span class="wiki-kicker">Owner tools</span>
+            <h2>Резервні копії поста</h2>
+        </div>
+        <small>Версії створюються автоматично перед кожною зміною редакторів. Тут вказано точний час створення кожної копії.</small>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="post-version-list">
+            @foreach (var version in Model)
+            {
+                <div class="post-version-item">
+                    <div class="post-version-item-info">
+                        <strong>@version.Action</strong>
+                        <span class="post-version-time">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+                            @version.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                        </span>
+                        <small>Автор зміни: @version.UserLogin</small>
+                    </div>
+                    <form asp-action="RestoreVersion"
+                          asp-route-id="@post?.Id"
+                          asp-route-versionId="@version.Id"
+                          method="post"
+                          onsubmit="return confirm('Відкотити пост до цієї версії? Поточний стан також буде збережено як резервну версію.');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-outline-warning">Відкотити</button>
+                    </form>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="text-muted mb-0">Попередніх версій поки немає.</p>
+    }
+</section>

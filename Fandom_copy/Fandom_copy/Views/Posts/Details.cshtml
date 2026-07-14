@@ -5,10 +5,10 @@
 @{
     ViewData["Title"] = Model.Title;
     var sectionLookup = Model.Sections.ToDictionary(s => s.Id);
-    var postVersions = ViewBag.PostVersions as List<PostVersionDto> ?? new List<PostVersionDto>();
+    var postComments = ViewBag.PostComments as List<PostCommentDto> ?? new List<PostCommentDto>();
 }
 
-<nav class="wiki-back"><a asp-controller="Posts" asp-action="Index">← К публикациям</a></nav>
+<nav class="wiki-back"><a asp-controller="Posts" asp-action="Index">← До публікацій</a></nav>
 
 @if (TempData["Error"] is string err) { <div class="alert alert-danger">@err</div> }
 @if (TempData["Message"] is string msg) { <div class="alert alert-success">@msg</div> }
@@ -35,7 +35,7 @@
 }
 
 <section class="wiki-hero">
-    <div class="wiki-kicker">@(Model.CategoryName ?? "Fandom page") · @(Model.IsPublic ? "Публичная" : "Приватная")</div>
+    <div class="wiki-kicker">@(Model.CategoryName ?? "Fandom page") · @(Model.IsPublic ? "Публічна" : "Приватная")</div>
     <h1>Welcome to the <em>@Model.Title</em> Wiki!</h1>
     @if (Model.TagNames.Any())
     {
@@ -63,51 +63,27 @@
         }
         @if (User?.Identity?.IsAuthenticated == true && Model.CanEdit)
         {
-            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Редактировать</a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Редагувати</a>
             <a asp-controller="PostContent" asp-action="Index" asp-route-postId="@Model.Id" class="btn btn-outline-primary">Структура</a>
-            <a asp-controller="PostSections" asp-action="Create" asp-route-postId="@Model.Id" class="btn btn-primary">+ Под-пост</a>
+            <a asp-controller="PostSections" asp-action="Create" asp-route-postId="@Model.Id" class="btn btn-primary">+ Підпост</a>
         }
     </div>
 </section>
 
-@if (Model.CanManageMembers)
+@if (ViewBag.CanManageBackups is true)
 {
     <section class="wiki-content">
-        <div class="post-version-panel">
-            <div class="post-version-heading">
-                <div>
-                    <span class="wiki-kicker">Owner tools</span>
-                    <h2>Откат поста</h2>
-                </div>
-                <small>Версии создаются автоматически перед изменениями редакторов.</small>
-            </div>
-            @if (postVersions.Any())
-            {
-                <div class="post-version-list">
-                    @foreach (var version in postVersions)
-                    {
-                        <div class="post-version-item">
-                            <div>
-                                <strong>@version.Action</strong>
-                                <small>@version.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm") · @version.UserLogin</small>
-                            </div>
-                            <form asp-action="RestoreVersion"
-                                  asp-route-id="@Model.Id"
-                                  asp-route-versionId="@version.Id"
-                                  method="post"
-                                  onsubmit="return confirm('Відкотити пост до цієї версії? Поточний стан також буде збережено як резервну версію.');">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm btn-outline-warning">Відкотити</button>
-                            </form>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <p class="text-muted mb-0">Попередніх версій поки немає.</p>
-            }
-        </div>
+        <a class="post-backups-link" asp-action="Versions" asp-route-id="@Model.Id">
+            <span class="post-backups-link-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /><path d="M12 7v5l4 2" /></svg>
+            </span>
+            <span class="post-backups-link-text">
+                <span class="wiki-kicker">Owner tools</span>
+                <strong>Резервні копії поста</strong>
+                <small>Переглянути історію змін і відкотити пост до попередньої версії</small>
+            </span>
+            <span class="post-backups-link-arrow">→</span>
+        </a>
     </section>
 }
 
@@ -131,7 +107,7 @@ else
         <div class="wiki-copy">@Model.Description</div>
         @if (!Model.Sections.Any())
         {
-            <p class="text-muted">Под-постов пока нет.</p>
+            <p class="text-muted">Підпостів поки немає.</p>
         }
         else
         {
@@ -150,10 +126,88 @@ else
                             }
                         </span>
                         <strong>@s.Title</strong>
-                        <small>Открыть →</small>
+                        <small>Відкрити →</small>
                     </a>
                 }
             </div>
         }
     </article>
 }
+
+@* ---------------- Коментарі ---------------- *@
+<section id="comments" class="wiki-content post-comments-section">
+    <div class="post-comments-heading">
+        <span class="wiki-kicker">Обговорення</span>
+        <h2>Коментарі <span class="post-comments-count">@postComments.Count</span></h2>
+    </div>
+
+    @if (User?.Identity?.IsAuthenticated == true)
+    {
+        <form asp-controller="Posts" asp-action="AddComment" asp-route-id="@Model.Id" method="post" class="post-comment-form">
+            @Html.AntiForgeryToken()
+            <textarea name="Text" class="post-comment-input" rows="3"
+                      maxlength="2000"
+                      placeholder="Напишіть свій коментар..."
+                      required></textarea>
+            <div class="post-comment-form-actions">
+                <button type="submit" class="btn btn-primary">Надіслати</button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="post-comment-guest">
+            Щоб залишити коментар, <a asp-controller="Account" asp-action="Login">увійдіть</a> у свій акаунт.
+        </div>
+    }
+
+    @if (postComments.Any())
+    {
+        <ul class="post-comment-list">
+            @foreach (var comment in postComments)
+            {
+                var frameClass = "frame-" + comment.Author.ProfileFrameName.ToLowerInvariant();
+                <li class="post-comment-item">
+                    <a class="post-comment-avatar" asp-controller="Account" asp-action="PublicProfile" asp-route-login="@comment.Author.Login"
+                       title="Перейти до профілю @comment.Author.Login">
+                        <span class="profile-avatar-frame post-comment-frame @frameClass">
+                            @if (!string.IsNullOrWhiteSpace(comment.Author.AvatarUrl))
+                            {
+                                <img src="@Url.Content(comment.Author.AvatarUrl)" alt="@comment.Author.Login" class="profile-avatar-img" />
+                            }
+                            else
+                            {
+                                <span class="avatar">@comment.Author.Login[..1].ToUpper()</span>
+                            }
+                        </span>
+                    </a>
+                    <div class="post-comment-body">
+                        <div class="post-comment-meta">
+                            <a class="post-comment-author" asp-controller="Account" asp-action="PublicProfile" asp-route-login="@comment.Author.Login">
+                                @comment.Author.Login
+                            </a>
+                            <small class="post-comment-date">@comment.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</small>
+                            @if (comment.CanDelete)
+                            {
+                                <form asp-controller="Posts" asp-action="DeleteComment"
+                                      asp-route-id="@Model.Id"
+                                      asp-route-commentId="@comment.Id"
+                                      method="post"
+                                      class="post-comment-delete"
+                                      onsubmit="return confirm('Видалити цей коментар?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-link btn-sm">Видалити</button>
+                                </form>
+                            }
+                        </div>
+                        <div class="post-comment-text">@comment.Text</div>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p class="post-comments-empty text-muted">Коментарів поки немає. Будьте першим!</p>
+    }
+</section>

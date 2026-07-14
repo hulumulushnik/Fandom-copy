@@ -1,13 +1,14 @@
 @using Fandom_copy.DTOs.Categories
 @model List<CategoryListItemDto>
 @{
-    ViewData["Title"] = "Категорії";
+    var currentLang = UiText.Normalize(Context.Request.Cookies[SettingsController.LangCookie]);
+    ViewData["Title"] = UiText.T(currentLang, "categories.title");
 }
 
 <div class="posts-heading">
     <div>
-        <p class="wiki-kicker">Спільнота FandomHub</p>
-        <h1>Категорії</h1>
+        <p class="wiki-kicker">@UiText.T(currentLang, "posts.community")</p>
+        <h1>@UiText.T(currentLang, "categories.title")</h1>
     </div>
 </div>
 
@@ -23,8 +24,8 @@
 @if (!Model.Any())
 {
     <div class="empty-structure">
-        <strong>Категорій ще немає</strong>
-        <span>Вони з'являться тут, щойно хтось їх додасть.</span>
+        <strong>@UiText.T(currentLang, "categories.empty")</strong>
+        <span>@UiText.T(currentLang, "categories.empty_hint")</span>
     </div>
 }
 else
@@ -42,7 +43,7 @@ else
                     {
                         <p class="category-card-desc">@c.Description</p>
                     }
-                    <span class="post-tag">@c.PostCount пост(ів)</span>
+                    <span class="post-tag">@c.PostCount @UiText.T(currentLang, "posts.count_suffix")</span>
                 </div>
             </a>
         }

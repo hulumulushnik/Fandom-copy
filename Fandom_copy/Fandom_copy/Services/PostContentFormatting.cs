@@ -65,10 +65,10 @@ public static class PostContentFormatting
 
     public static string TemplateLabel(PostBlockTemplateType type) => type switch
     {
-        PostBlockTemplateType.InfoBox => "Инфо",
-        PostBlockTemplateType.Warning => "Внимание",
+        PostBlockTemplateType.InfoBox => "Інфо",
+        PostBlockTemplateType.Warning => "Увага",
         PostBlockTemplateType.Quote => "Цитата",
-        PostBlockTemplateType.Divider => "Разделитель",
+        PostBlockTemplateType.Divider => "Розділювач",
         PostBlockTemplateType.FactCard => "Факт",
         PostBlockTemplateType.LoreBlock => "Лор",
         PostBlockTemplateType.CharacterStats => "Характеристики",

@@ -10,9 +10,9 @@
 
 <section class="editor-page">
     <div class="editor-heading">
-        <p class="wiki-kicker">Настройки страницы</p>
+        <p class="wiki-kicker">Налаштування сторінки</p>
         <h1>Редагувати пост</h1>
-        <p>Здесь можно менять основные данные и быстро добавить новые изображения в корень поста. Точный порядок блоков меняется в “Структуре”.</p>
+        <p>Тут можна змінити основні дані й швидко додати нові зображення в корінь поста. Точний порядок блоків змінюється у «Структурі».</p>
     </div>
 
     <form asp-action="Edit" asp-route-id="@postId" method="post" enctype="multipart/form-data" class="editor-card">
@@ -22,13 +22,13 @@
         <div class="editor-two-columns">
             <div class="editor-main-column">
                 <div class="mb-3">
-                    <label asp-for="Title" class="form-label">Название страницы</label>
+                    <label asp-for="Title" class="form-label">Назва сторінки</label>
                     <input asp-for="Title" class="form-control" />
                     <span asp-validation-for="Title" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Description" class="form-label">Описание / вступление</label>
+                    <label asp-for="Description" class="form-label">Опис / вступ</label>
                     <textarea asp-for="Description" class="form-control" rows="7"></textarea>
                     <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
@@ -80,16 +80,16 @@
                 </div>
 
                 <div class="media-uploader mt-3">
-                    <h2>Добавить фото в пост</h2>
-                    <p>Новые изображения появятся в конце основной структуры поста.</p>
+                    <h2>Додати фото в пост</h2>
+                    <p>Нові зображення з’являться в кінці основної структури поста.</p>
                     <input type="file" name="imageFiles" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="form-control js-image-input" data-preview="#editImagePreview" />
-                    <input type="text" name="imageCaption" maxlength="240" class="form-control mt-2" placeholder="Общая подпись к новым фото" />
-                    <small class="text-muted">Для точного расположения откройте “Структуру”.</small>
+                    <input type="text" name="imageCaption" maxlength="240" class="form-control mt-2" placeholder="Спільний підпис до нових фото" />
+                    <small class="text-muted">Для точного розташування відкрийте «Структуру».</small>
                     <div id="editImagePreview" class="image-preview-grid"></div>
                 </div>
 
                 <div class="media-uploader mt-3">
-                    <h2>Фото в корне</h2>
+                    <h2>Фото в корені</h2>
                     @if (rootImages.Any())
                     {
                         <div class="existing-media-strip">
@@ -107,9 +107,9 @@
                     }
                     else
                     {
-                        <p class="text-muted mb-0">В корне поста пока нет изображений.</p>
+                        <p class="text-muted mb-0">У корені поста поки немає зображень.</p>
                     }
-                    <a asp-controller="PostContent" asp-action="Index" asp-route-postId="@postId" class="btn btn-sm btn-outline-primary mt-3">Открыть структуру</a>
+                    <a asp-controller="PostContent" asp-action="Index" asp-route-postId="@postId" class="btn btn-sm btn-outline-primary mt-3">Відкрити структуру</a>
                 </div>
             </aside>
         </div>

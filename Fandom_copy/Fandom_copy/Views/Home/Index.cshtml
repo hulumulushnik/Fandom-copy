@@ -1,25 +1,26 @@
 @using Fandom_copy.DTOs.Home
 @model HomeViewModel
 @{
-    ViewData["Title"] = "Головна";
+    var currentLang = UiText.Normalize(Context.Request.Cookies[SettingsController.LangCookie]);
+    ViewData["Title"] = UiText.T(currentLang, "home.title");
 }
 
 <section class="home-section">
     <div class="home-section-heading">
-        <h2>@(Model.JumpBackInIsSaved ? "Продовжити перегляд" : "Останні оновлення")</h2>
+        <h2>@(Model.JumpBackInIsSaved ? UiText.T(currentLang, "home.jump_back") : UiText.T(currentLang, "home.recent"))</h2>
         @if (Model.JumpBackInIsSaved)
         {
-            <a asp-controller="Posts" asp-action="Saved" class="home-view-all">Усе збережене</a>
+            <a asp-controller="Posts" asp-action="Saved" class="home-view-all">@UiText.T(currentLang, "home.all_saved")</a>
         }
         else
         {
-            <a asp-controller="Posts" asp-action="Index" class="home-view-all">Усі пости</a>
+            <a asp-controller="Posts" asp-action="Index" class="home-view-all">@UiText.T(currentLang, "home.all_posts")</a>
         }
     </div>
 
     @if (!Model.JumpBackIn.Any())
     {
-        <p class="text-muted">Постів ще немає. <a asp-controller="Posts" asp-action="Create">Створіть перший пост →</a></p>
+        <p class="text-muted">@UiText.T(currentLang, "home.empty") <a asp-controller="Posts" asp-action="Create">@UiText.T(currentLang, "home.create_first")</a></p>
     }
     else
     {
@@ -51,7 +52,7 @@
 {
     <section class="home-section">
         <div class="home-section-heading">
-            <h2>Останні пости</h2>
+            <h2>@UiText.T(currentLang, "home.recent_posts")</h2>
         </div>
         <div class="home-recent-row">
             @foreach (var c in Model.RecentPosts)
@@ -78,7 +79,7 @@
 {
     <section class="home-section">
         <div class="home-section-heading">
-            <h2>Категорії, які варто відкрити</h2>
+            <h2>@UiText.T(currentLang, "home.categories_to_open")</h2>
         </div>
         <div class="home-category-grid">
             @foreach (var cat in Model.Categories)
@@ -96,7 +97,7 @@
                     </div>
                     <div class="home-category-info">
                         <strong>@cat.Name</strong>
-                        <small>@cat.PostCount пост(ів)</small>
+                        <small>@cat.PostCount @UiText.T(currentLang, "posts.count_suffix")</small>
                     </div>
                 </a>
             }
