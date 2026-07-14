@@ -314,17 +314,58 @@ using (var scope = app.Services.CreateScope())
             CREATE INDEX [IX_PostGalleryImages_PostContentBlockId_Order]
                 ON [dbo].[PostGalleryImages] ([PostContentBlockId], [Order]);
         END
+        IF OBJECT_ID(N'[dbo].[PostComments]', N'U') IS NULL
+           AND OBJECT_ID(N'[dbo].[Posts]', N'U') IS NOT NULL
+           AND OBJECT_ID(N'[dbo].[Users]', N'U') IS NOT NULL
+        BEGIN
+            CREATE TABLE [dbo].[PostComments] (
+                [Id] uniqueidentifier NOT NULL PRIMARY KEY,
+                [PostId] uniqueidentifier NOT NULL,
+                [UserId] uniqueidentifier NOT NULL,
+                [Text] nvarchar(max) NOT NULL,
+                [CreatedAt] datetime2 NOT NULL DEFAULT (SYSUTCDATETIME()),
+                CONSTRAINT [FK_PostComments_Posts_PostId]
+                    FOREIGN KEY ([PostId]) REFERENCES [dbo].[Posts] ([Id]) ON DELETE CASCADE,
+                CONSTRAINT [FK_PostComments_Users_UserId]
+                    FOREIGN KEY ([UserId]) REFERENCES [dbo].[Users] ([Id]) ON DELETE NO ACTION
+            );
+            CREATE INDEX [IX_PostComments_PostId_CreatedAt]
+                ON [dbo].[PostComments] ([PostId], [CreatedAt]);
+            CREATE INDEX [IX_PostComments_UserId] ON [dbo].[PostComments] ([UserId]);
+        END
         """);
-    if (!db.Categories.Any())
+    var defaultCategories = new (string Name, string Description)[]
     {
+        ("General",     "Default category for community posts."),
+        ("Games",       "Video games, board games, gaming lore and communities."),
+        ("Movies",      "Films, cinema universes, directors and franchises."),
+        ("TV Shows",    "Television series, seasons, episodes and characters."),
+        ("Anime",       "Anime series, manga adaptations and studios."),
+        ("Books",       "Novels, book series, authors and literary universes."),
+        ("Comics",      "Comic books, graphic novels and publishers."),
+        ("Characters",  "Notable characters from any fandom."),
+        ("Music",       "Musicians, bands, albums and music genres."),
+        ("Sports",      "Sports teams, players, leagues and events."),
+        ("Technology",  "Gadgets, software, hardware and tech companies."),
+        ("Science",     "Science topics, discoveries and researchers."),
+        ("History",     "Historical events, eras and figures."),
+        ("Lifestyle",   "Food, travel, hobbies and everyday culture.")
+    };
+
+    var existingNames = db.Categories.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    var added = false;
+    foreach (var (name, description) in defaultCategories)
+    {
+        if (existingNames.Contains(name)) continue;
         db.Categories.Add(new Fandom_copy.Models.Category
         {
             Id = Guid.NewGuid(),
-            Name = "General",
-            Description = "Default category for community posts."
+            Name = name,
+            Description = description
         });
-        db.SaveChanges();
+        added = true;
     }
+    if (added) db.SaveChanges();
 }
 
 if (!app.Environment.IsDevelopment())

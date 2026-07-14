@@ -25,6 +25,7 @@ namespace Fandom_copy.Data
         public DbSet<Images> Images => Set<Images>();
         public DbSet<FileAttachment> Attachments => Set<FileAttachment>();
         public DbSet<CodeBlock> CodeBlocks => Set<CodeBlock>();
+        public DbSet<PostComment> PostComments => Set<PostComment>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -118,6 +119,23 @@ namespace Fandom_copy.Data
                     .WithMany()
                     .HasForeignKey(v => v.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<PostComment>(entity =>
+            {
+                entity.HasIndex(c => new { c.PostId, c.CreatedAt });
+
+                entity.HasOne(c => c.Post)
+                    .WithMany()
+                    .HasForeignKey(c => c.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.User)
+                    .WithMany()
+                    .HasForeignKey(c => c.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(c => c.Text).IsRequired();
             });
 
             modelBuilder.Entity<SavedPost>(entity =>

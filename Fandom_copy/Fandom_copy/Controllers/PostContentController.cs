@@ -46,7 +46,7 @@ public class PostContentController : Controller
         if (post is null) return RedirectToAction("Details", "Posts", new { id = postId });
         if (string.IsNullOrWhiteSpace(dto.NewText))
         {
-            TempData["Error"] = "Введите текст блока.";
+            TempData["Error"] = "Введіть текст блоку.";
             return RedirectToEditor(postId, sectionId);
         }
 
@@ -89,7 +89,7 @@ public class PostContentController : Controller
         if (post is null) return RedirectToAction("Details", "Posts", new { id = postId });
         if (templateType == PostBlockTemplateType.None)
         {
-            TempData["Error"] = "Выберите шаблон.";
+            TempData["Error"] = "Оберіть шаблон.";
             return RedirectToEditor(postId, sectionId);
         }
 
@@ -130,7 +130,7 @@ public class PostContentController : Controller
 
         if (files.Count == 0)
         {
-            TempData["Error"] = "Выберите изображение.";
+            TempData["Error"] = "Оберіть зображення.";
             return RedirectToEditor(postId, sectionId);
         }
 
@@ -179,7 +179,7 @@ public class PostContentController : Controller
         var files = galleryFiles?.Where(f => f is not null && f.Length > 0).ToList() ?? new List<IFormFile>();
         if (files.Count == 0)
         {
-            TempData["Error"] = "Выберите хотя бы одно изображение для галереи.";
+            TempData["Error"] = "Оберіть хоча б одне зображення для галереї.";
             return RedirectToEditor(postId, sectionId);
         }
 
@@ -314,7 +314,7 @@ public class PostContentController : Controller
 
         if (section is null)
         {
-            TempData["Error"] = "Этот под-пост нельзя вставить в выбранную структуру.";
+            TempData["Error"] = "Цей підпост не можна вставити в обрану структуру.";
             return RedirectToEditor(postId, sectionId);
         }
 
@@ -326,7 +326,7 @@ public class PostContentController : Controller
 
         if (alreadyLinked)
         {
-            TempData["Error"] = "Этот под-пост уже есть в структуре.";
+            TempData["Error"] = "Цей підпост уже є у структурі.";
             return RedirectToEditor(postId, sectionId);
         }
 
@@ -392,7 +392,7 @@ public class PostContentController : Controller
         if (post is null) return RedirectToAction("Details", "Posts", new { id = postId });
         if (string.IsNullOrWhiteSpace(text))
         {
-            TempData["Error"] = "Текстовый блок не может быть пустым.";
+            TempData["Error"] = "Текстовий блок не може бути порожнім.";
             return RedirectToEditor(postId, sectionId);
         }
 
@@ -496,7 +496,7 @@ public class PostContentController : Controller
         var isXhr = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
         var post = await GetEditablePost(postId);
         if (post is null)
-            return isXhr ? Json(new { success = false, error = "Нет прав." }) : RedirectToAction("Details", "Posts", new { id = postId });
+            return isXhr ? Json(new { success = false, error = "Немає прав." }) : RedirectToAction("Details", "Posts", new { id = postId });
 
         var ids = (orderedIds ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -511,7 +511,7 @@ public class PostContentController : Controller
 
         if (ids.Count == 0 || ids.Count != blocks.Count || !ids.All(id => blocks.Any(b => b.Id == id)))
         {
-            TempData["Error"] = "Некорректный порядок блоков.";
+            TempData["Error"] = "Некоректний порядок блоків.";
             return isXhr ? Json(new { success = false, error = TempData["Error"] }) : RedirectToEditor(postId, sectionId);
         }
 
@@ -571,7 +571,7 @@ public class PostContentController : Controller
         var result = await _posts.GetByIdAsync(postId, userId);
         if (!result.Success || !result.Data!.CanEdit)
         {
-            TempData["Error"] = "У вас нет прав на изменение структуры публикации.";
+            TempData["Error"] = "У вас немає прав на зміну структури публікації.";
             return null;
         }
 
@@ -649,13 +649,13 @@ public class PostContentController : Controller
 
     private static string DefaultTemplateText(PostBlockTemplateType type) => type switch
     {
-        PostBlockTemplateType.InfoBox => "Информация. Краткое пояснение или контекст.",
-        PostBlockTemplateType.Warning => "Внимание! Опишите важное предупреждение.",
-        PostBlockTemplateType.Quote => "«Впишите цитату сюда». — Автор",
+        PostBlockTemplateType.InfoBox => "Інформація. Коротке пояснення або контекст.",
+        PostBlockTemplateType.Warning => "Увага! Опишіть важливе попередження.",
+        PostBlockTemplateType.Quote => "«Впишіть цитату сюди». — Автор",
         PostBlockTemplateType.Divider => "---",
         PostBlockTemplateType.FactCard => "Факт: краткое утверждение, которое стоит запомнить.",
-        PostBlockTemplateType.LoreBlock => "Лор: описание истории или предыстории мира.",
-        PostBlockTemplateType.CharacterStats => "Имя: —\nРаса: —\nКласс: —\nСила: —\nЛовкость: —\nИнтеллект: —",
+        PostBlockTemplateType.LoreBlock => "Лор: опис історії або передісторії світу.",
+        PostBlockTemplateType.CharacterStats => "Ім’я: —\nРаса: —\nКлас: —\nСила: —\nСпритність: —\nІнтелект: —",
         _ => string.Empty
     };
 

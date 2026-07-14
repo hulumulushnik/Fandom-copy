@@ -61,13 +61,116 @@ namespace Fandom_copy.Controllers
             ViewBag.IsSaved = userId is not null &&
                 await _db.SavedPosts.AnyAsync(s => s.PostId == id && s.UserId == userId.Value);
 
-            if (userId is not null && result.Data!.CanManageMembers)
-            {
-                var versions = await _versions.GetVersionsAsync(id, userId.Value);
-                ViewBag.PostVersions = versions.Data ?? new List<PostVersionDto>();
-            }
+            ViewBag.CanManageBackups = userId is not null && result.Data!.CanManageMembers;
+
+            // Список коментарів, які показуються внизу сторінки поста.
+            // Кожен коментар віддається разом з мінімальною карткою автора,
+            // щоб можна було відобразити аватар і посилання на профіль.
+            var comments = await _db.PostComments
+                .Where(c => c.PostId == id)
+                .Include(c => c.User)
+                .OrderBy(c => c.CreatedAt)
+                .ToListAsync();
+
+            bool isAdmin = User.IsInRole(GlobalRole.Admin.ToString());
+            ViewBag.PostComments = comments
+                .Select(c => PostCommentDto.FromEntity(c, userId, isAdmin))
+                .ToList();
 
             return View(result.Data);
+        }
+
+        // POST /posts/{id}/comments
+        [HttpPost("{id:guid}/comments")]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddComment(Guid id, CreatePostCommentDto dto)
+        {
+            var userId = GetCurrentUserId();
+
+            var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+            if (post is null)
+            {
+                TempData["Error"] = "Пост не знайдено";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var text = (dto.Text ?? string.Empty).Trim();
+            if (text.Length == 0)
+            {
+                TempData["Error"] = "Коментар не може бути порожнім";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            if (text.Length > 2000)
+                text = text[..2000];
+
+            _db.PostComments.Add(new PostComment
+            {
+                Id = Guid.NewGuid(),
+                PostId = id,
+                UserId = userId,
+                Text = text,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Details), controllerName: null, routeValues: new { id }, fragment: "comments");
+        }
+
+        // POST /posts/{id}/comments/{commentId}/delete
+        [HttpPost("{id:guid}/comments/{commentId:guid}/delete")]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteComment(Guid id, Guid commentId)
+        {
+            var userId = GetCurrentUserId();
+            var isAdmin = User.IsInRole(GlobalRole.Admin.ToString());
+
+            var comment = await _db.PostComments.FirstOrDefaultAsync(c => c.Id == commentId && c.PostId == id);
+            if (comment is null)
+            {
+                TempData["Error"] = "Коментар не знайдено";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            if (comment.UserId != userId && !isAdmin)
+            {
+                TempData["Error"] = "Немає прав на видалення цього коментаря";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            _db.PostComments.Remove(comment);
+            await _db.SaveChangesAsync();
+
+            TempData["Message"] = "Коментар видалено";
+            return RedirectToAction(nameof(Details), controllerName: null, routeValues: new { id }, fragment: "comments");
+        }
+
+        // GET /posts/{id}/versions
+        // Окрема вкладка з резервними копіями (бекапами) поста.
+        [HttpGet("{id:guid}/versions")]
+        [Authorize]
+        public async Task<IActionResult> Versions(Guid id)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _postService.GetByIdAsync(id, userId);
+            if (!result.Success)
+            {
+                TempData["Error"] = result.Error;
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!result.Data!.CanManageMembers)
+            {
+                TempData["Error"] = "Немає прав для перегляду резервних копій цього поста";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var versions = await _versions.GetVersionsAsync(id, userId, take: 50);
+            ViewBag.Post = result.Data;
+            return View(versions.Data ?? new List<PostVersionDto>());
         }
 
         // POST /posts/{id}/versions/{versionId}/restore
@@ -84,7 +187,7 @@ namespace Fandom_copy.Controllers
             else
                 TempData["Message"] = "Пост відновлено до вибраної версії";
 
-            return RedirectToAction(nameof(Details), new { id });
+            return RedirectToAction(nameof(Versions), new { id });
         }
 
         // GET /posts/search?q=...
@@ -589,7 +692,7 @@ namespace Fandom_copy.Controllers
             {
                 var saved = await _imageStorage.SaveAsync(postId, file);
                 if (!saved.Success)
-                    return ServiceResult.Fail(saved.Error ?? "Не удалось загрузить изображение");
+                    return ServiceResult.Fail(saved.Error ?? "Не вдалося завантажити зображення");
 
                 _db.PostContentBlocks.Add(new PostContentBlock
                 {

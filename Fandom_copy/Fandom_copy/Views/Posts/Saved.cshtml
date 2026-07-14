@@ -1,15 +1,16 @@
 @using Fandom_copy.DTOs.Posts
 @model List<PostDto>
 @{
-    ViewData["Title"] = "Збережено";
+    var currentLang = UiText.Normalize(Context.Request.Cookies[SettingsController.LangCookie]);
+    ViewData["Title"] = UiText.T(currentLang, "saved.title");
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <p class="wiki-kicker">Ваша бібліотека</p>
-        <h1 class="mb-0">Збережено</h1>
+        <p class="wiki-kicker">@UiText.T(currentLang, "saved.kicker")</p>
+        <h1 class="mb-0">@UiText.T(currentLang, "saved.title")</h1>
     </div>
-    <a asp-controller="Posts" asp-action="Index" class="btn btn-outline-secondary">Усі пости</a>
+    <a asp-controller="Posts" asp-action="Index" class="btn btn-outline-secondary">@UiText.T(currentLang, "home.all_posts")</a>
 </div>
 
 @if (TempData["Error"] is string err) { <div class="alert alert-danger">@err</div> }
@@ -17,7 +18,7 @@
 
 @if (!Model.Any())
 {
-    <p class="text-muted">Ви ще нічого не зберегли. Натисніть «Зберегти» на сторінці поста, щоб додати його сюди.</p>
+    <p class="text-muted">@UiText.T(currentLang, "saved.empty")</p>
 }
 else
 {
@@ -32,12 +33,12 @@ else
                     </div>
                     <p class="mb-1">@p.Description</p>
                     <small class="text-muted">
-                        Категорія: @(p.CategoryName ?? "—")
-                        @(p.IsPublic ? "· Публічний" : "· Приватний")
+                        @UiText.T(currentLang, "saved.category_label"): @(p.CategoryName ?? "—")
+                        @(p.IsPublic ? "· " + UiText.T(currentLang, "posts.public") : "· " + UiText.T(currentLang, "posts.private"))
                     </small>
                 </a>
                 <form asp-controller="Posts" asp-action="ToggleSave" asp-route-id="@p.Id" method="post" class="saved-item-unsave">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Прибрати</button>
+                    <button type="submit" class="btn btn-sm btn-outline-danger">@UiText.T(currentLang, "saved.remove")</button>
                 </form>
             </div>
         }

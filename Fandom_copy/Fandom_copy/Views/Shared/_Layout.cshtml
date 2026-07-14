@@ -1,10 +1,16 @@
 ﻿@using Fandom_copy.Localization
 @using Fandom_copy.Controllers
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnvironment
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
     var currentLang = UiText.Normalize(Context.Request.Cookies[SettingsController.LangCookie]);
     var currentTheme = string.IsNullOrWhiteSpace(Context.Request.Cookies[SettingsController.ThemeCookie])
         ? "dark"
         : Context.Request.Cookies[SettingsController.ThemeCookie];
+    var consoleAdminEnabled =
+        string.Equals(HostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase)
+        && Configuration.GetValue<bool>("DevTools:EnableConsoleAdmin")
+        && User.Identity?.IsAuthenticated == true;
 }
 <!DOCTYPE html>
 <html lang="@currentLang" data-theme="@currentTheme">
@@ -45,37 +51,37 @@
 
     <div class="fandom-shell">
         <aside class="fandom-sidebar">
-            <a asp-controller="Home" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+            <a asp-controller="Home" asp-action="Index" title="@UiText.T(currentLang, "sidebar.home")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10v10h14V10" /></svg>
                 <span>@UiText.T(currentLang, "sidebar.home")</span>
             </a>
-            <a asp-controller="Posts" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Posts" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+            <a asp-controller="Posts" asp-action="Index" title="@UiText.T(currentLang, "sidebar.posts")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Posts" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></svg>
                 <span>@UiText.T(currentLang, "sidebar.posts")</span>
             </a>
-            <a asp-controller="Categories" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Categories" ? "active" : "")">
+            <a asp-controller="Categories" asp-action="Index" title="@UiText.T(currentLang, "sidebar.categories")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Categories" ? "active" : "")">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5-9 5-9-5 9-5z" /><path d="M3 13l9 5 9-5" /></svg>
                 <span>@UiText.T(currentLang, "sidebar.categories")</span>
             </a>
             @if (User.Identity?.IsAuthenticated == true)
             {
-                <a asp-controller="Posts" asp-action="Saved" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Posts" && ViewContext.RouteData.Values["action"]?.ToString() == "Saved" ? "active" : "")">
+                <a asp-controller="Posts" asp-action="Saved" title="@UiText.T(currentLang, "sidebar.saved")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Posts" && ViewContext.RouteData.Values["action"]?.ToString() == "Saved" ? "active" : "")">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" /></svg>
                     <span>@UiText.T(currentLang, "sidebar.saved")</span>
                 </a>
             }
             @if (User.IsInRole("Admin"))
             {
-                <a asp-controller="Admin" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" ? "active" : "")">
+                <a asp-controller="Admin" asp-action="Index" title="@UiText.T(currentLang, "sidebar.admin")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" ? "active" : "")">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7z" /><path d="M9 12l2 2 4-5" /></svg>
-                    <span>Адмінка</span>
+                    <span>@UiText.T(currentLang, "sidebar.admin")</span>
                 </a>
             }
-            <a asp-controller="Home" asp-action="Privacy" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Privacy" ? "active" : "")">
+            <a asp-controller="Home" asp-action="Privacy" title="@UiText.T(currentLang, "sidebar.rules")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Privacy" ? "active" : "")">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" /></svg>
                 <span>@UiText.T(currentLang, "sidebar.rules")</span>
             </a>
-            <a asp-controller="Settings" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Settings" ? "active" : "")">
+            <a asp-controller="Settings" asp-action="Index" title="@UiText.T(currentLang, "sidebar.settings")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Settings" ? "active" : "")">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15z" /></svg>
                 <span>@UiText.T(currentLang, "sidebar.settings")</span>
             </a>
@@ -99,6 +105,39 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (consoleAdminEnabled)
+    {
+        <form id="dev-console-admin-token" asp-controller="DevTools" asp-action="GrantAdmin" method="post" hidden></form>
+        <script>
+            (() => {
+                const grantAdmin = async () => {
+                    const token = document.querySelector('#dev-console-admin-token input[name="__RequestVerificationToken"]')?.value || '';
+                    const response = await fetch('/dev-tools/grant-admin', {
+                        method: 'POST',
+                        headers: { 'RequestVerificationToken': token }
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Admin role was not granted.');
+                    }
+
+                    console.info(data.message || 'Admin role granted.');
+                    window.location.href = data.adminUrl || '/admin';
+                    return data;
+                };
+
+                Object.defineProperty(window, 'admin', {
+                    configurable: true,
+                    get() {
+                        return grantAdmin();
+                    }
+                });
+
+                window.grantAdmin = grantAdmin;
+            })();
+        </script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

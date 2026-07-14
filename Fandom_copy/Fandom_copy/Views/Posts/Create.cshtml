@@ -7,9 +7,9 @@
 
 <section class="editor-page">
     <div class="editor-heading">
-        <p class="wiki-kicker">Новая Fandom-страница</p>
+        <p class="wiki-kicker">Нова Fandom-сторінка</p>
         <h1>Створити пост</h1>
-        <p>Заполните основу страницы и сразу прикрепите изображения — они появятся в структуре поста как фото-блоки.</p>
+        <p>Заповніть основу сторінки й одразу прикріпіть зображення — вони з’являться у структурі поста як фото-блоки.</p>
     </div>
 
     <form asp-action="Create" method="post" enctype="multipart/form-data" class="editor-card">
@@ -19,14 +19,14 @@
         <div class="editor-two-columns">
             <div class="editor-main-column">
                 <div class="mb-3">
-                    <label asp-for="Title" class="form-label">Название страницы</label>
-                    <input asp-for="Title" class="form-control" placeholder="Например: Rust Wiki" />
+                    <label asp-for="Title" class="form-label">Назва сторінки</label>
+                    <input asp-for="Title" class="form-control" placeholder="Наприклад: Rust Wiki" />
                     <span asp-validation-for="Title" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Description" class="form-label">Вступительный текст</label>
-                    <textarea asp-for="Description" class="form-control" rows="7" placeholder="Краткое описание мира, темы, персонажа или гайда..."></textarea>
+                    <label asp-for="Description" class="form-label">Вступний текст</label>
+                    <textarea asp-for="Description" class="form-control" rows="7" placeholder="Короткий опис світу, теми, персонажа або гайда..."></textarea>
                     <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
 
@@ -61,11 +61,11 @@
                 </div>
 
                 <div class="media-uploader mt-3">
-                    <h2>Изображения поста</h2>
-                    <p>Можно выбрать сразу несколько фото. Они будут вставлены в корень страницы после вступительного текста.</p>
+                    <h2>Зображення поста</h2>
+                    <p>Можна обрати одразу кілька фото. Вони будуть вставлені в корінь сторінки після вступного тексту.</p>
                     <input type="file" name="imageFiles" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="form-control js-image-input" data-preview="#createImagePreview" />
-                    <input type="text" name="imageCaption" maxlength="240" class="form-control mt-2" placeholder="Общая подпись к выбранным фото" />
-                    <small class="text-muted">JPG, PNG, GIF или WEBP до 5 МБ на файл.</small>
+                    <input type="text" name="imageCaption" maxlength="240" class="form-control mt-2" placeholder="Спільний підпис до вибраних фото" />
+                    <small class="text-muted">JPG, PNG, GIF або WEBP до 5 МБ на файл.</small>
                     <div id="createImagePreview" class="image-preview-grid"></div>
                 </div>
             </aside>

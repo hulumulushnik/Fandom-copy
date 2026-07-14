@@ -351,7 +351,7 @@ namespace Fandom_copy.Controllers
             {
                 var saved = await _imageStorage.SaveAsync(postId, file);
                 if (!saved.Success)
-                    return ServiceResult.Fail(saved.Error ?? "Не удалось загрузить изображение");
+                    return ServiceResult.Fail(saved.Error ?? "Не вдалося завантажити зображення");
 
                 _db.PostContentBlocks.Add(new PostContentBlock
                 {

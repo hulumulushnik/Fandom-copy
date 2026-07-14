@@ -104,7 +104,7 @@
                         var topicSectionId = topicBlock.SectionId!.Value;
                         var section = sectionLookup.GetValueOrDefault(topicSectionId);
                         var iconPath = topicBlock.SectionIconPath ?? section?.IconPath ?? section?.PrimaryImagePath;
-                        var linkText = string.IsNullOrWhiteSpace(topicBlock.SectionLinkText) ? (topicBlock.SectionTitle ?? "Под-пост") : topicBlock.SectionLinkText;
+                        var linkText = string.IsNullOrWhiteSpace(topicBlock.SectionLinkText) ? (topicBlock.SectionTitle ?? "Підпост") : topicBlock.SectionLinkText;
                         <a class="wiki-topic-card" asp-controller="PostSections" asp-action="Details" asp-route-postId="@postId" asp-route-id="@topicSectionId">
                             <span class="wiki-topic-art">
                                 @if (!string.IsNullOrWhiteSpace(iconPath))
@@ -117,7 +117,7 @@
                                 }
                             </span>
                             <strong>@linkText</strong>
-                            <small>Открыть под-пост →</small>
+                            <small>Відкрити підпост →</small>
                         </a>
                         i++;
                     }
@@ -135,7 +135,7 @@
                         var topicSectionId = topicBlock.SectionId!.Value;
                         var section = sectionLookup.GetValueOrDefault(topicSectionId);
                         var iconPath = topicBlock.SectionIconPath ?? section?.IconPath ?? section?.PrimaryImagePath;
-                        var linkText = string.IsNullOrWhiteSpace(topicBlock.SectionLinkText) ? (topicBlock.SectionTitle ?? "Под-пост") : topicBlock.SectionLinkText;
+                        var linkText = string.IsNullOrWhiteSpace(topicBlock.SectionLinkText) ? (topicBlock.SectionTitle ?? "Підпост") : topicBlock.SectionLinkText;
                         <li>
                             <a class="wiki-topic-compact" asp-controller="PostSections" asp-action="Details" asp-route-postId="@postId" asp-route-id="@topicSectionId">
                                 <span class="wiki-topic-compact-icon">
@@ -161,7 +161,7 @@
                 var topicSectionId = topicBlock.SectionId!.Value;
                 var section = sectionLookup.GetValueOrDefault(topicSectionId);
                 var iconPath = topicBlock.SectionIconPath ?? section?.IconPath ?? section?.PrimaryImagePath;
-                var linkText = string.IsNullOrWhiteSpace(topicBlock.SectionLinkText) ? (topicBlock.SectionTitle ?? "Под-пост") : topicBlock.SectionLinkText;
+                var linkText = string.IsNullOrWhiteSpace(topicBlock.SectionLinkText) ? (topicBlock.SectionTitle ?? "Підпост") : topicBlock.SectionLinkText;
 
                 if (topicBlock.SectionDisplayStyle == PostSectionDisplayStyle.TextLink)
                 {
@@ -183,7 +183,7 @@
                             }
                         </span>
                         <strong>@linkText</strong>
-                        <small>Открыть под-пост →</small>
+                        <small>Відкрити підпост →</small>
                     </a>
                 }
                 i++;
